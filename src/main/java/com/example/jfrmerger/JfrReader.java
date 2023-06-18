@@ -4,17 +4,16 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 
 @Slf4j
 public class JfrReader implements AutoCloseable {
+    long counterBytes = 4; //init magic bytes
 
     private final InputStream input;
     private final File file;
-    private int features;
+    private long features;
     private long ticksPerSecond;
     private long startTicks;
     private long durationNanos;
@@ -28,11 +27,18 @@ public class JfrReader implements AutoCloseable {
         this.input = new BufferedInputStream(new FileInputStream(file));
     }
 
-    public void readChunk() throws IOException {
-        readHeader();
-        readMetadata();
-        readConstantPool();
-        readEvents();
+    public boolean readChunk() {
+        try {
+            readHeader();
+            readMetadata();
+            readConstantPool();
+            readEvents();
+        } catch (Exception e) {
+            log.error("Error during reading", e);
+            return false;
+        }
+
+        return true;
     }
 
     private void readEvents() {
@@ -43,47 +49,77 @@ public class JfrReader implements AutoCloseable {
 
     }
 
-    private void readMetadata() {
+    private void readMetadata() throws IOException {
+        skipBytes(metadataOffset - counterBytes);
 
+        long size = getInt(); //87312
+        long eventType = getLong();
+        long start = getLong();
+        long duration = getLong();
+        long metadataId = getLong();
+        long stringCount = getInt(); //1783
+
+        log.info("size: {}, eventType: {}, start: {}, duration: {}, metadataId: {}, stringCount: {}", size, eventType, start, duration, metadataId, stringCount);
+        long hz = getLong();
+
+    }
+
+    private void skipBytes(long size) throws IOException {
+        counterBytes += size;
+        input.skipNBytes(size);
     }
 
     private void readHeader() throws IOException {
         byte[] flro = input.readNBytes(4);
         if (flro[0] != 'F' || flro[1] != 'L' || flro[2] != 'R' || flro[3] != 0) {
-            log.error(Arrays.toString(flro));
-            throw new RuntimeException("File [" + file.getAbsolutePath() + "] is corrupted");
+            throw new RuntimeException("File [" + file.getAbsolutePath() + "] is corrupted, FRL0: [" + Arrays.toString(flro) + "]");
         }
 
-        ;
-        int major = ByteBuffer.wrap(input.readNBytes(2)).getShort();
-        int minor = ByteBuffer.wrap(input.readNBytes(2)).getShort();
+
+        long major = getShort();
+        long minor = getShort();
 
 
-        this.chunkSize = ByteBuffer.wrap(input.readNBytes(8)).getLong();
-        this.constantPoolOffset = ByteBuffer.wrap(input.readNBytes(8)).getLong();
-        this.metadataOffset = ByteBuffer.wrap(input.readNBytes(8)).getLong();
-        this.startTimeNanos = ByteBuffer.wrap(input.readNBytes(8)).getLong();
-        this.durationNanos = ByteBuffer.wrap(input.readNBytes(8)).getLong();
-        this.startTicks = ByteBuffer.wrap(input.readNBytes(8)).getLong();
-        this.ticksPerSecond = ByteBuffer.wrap(input.readNBytes(8)).getLong();
-        this.features = ByteBuffer.wrap(input.readNBytes(8)).getInt();
+        this.chunkSize = getLong();
+        this.constantPoolOffset = getLong();
+        this.metadataOffset = getLong();
+        this.startTimeNanos = getLong();
+        this.durationNanos = getLong();
+        this.startTicks = getLong();
+        this.ticksPerSecond = getLong();
+        this.features = getInt();
 
         log.info("major: " + major + ", minor: " + minor);
         log.info(toString());
     }
 
+    private long getShort() throws IOException {
+        counterBytes += 2;
+        return bytesToLong(input.readNBytes(2));
+    }
+
+    private long getInt() throws IOException {
+        counterBytes += 4;
+        return bytesToLong(input.readNBytes(4));
+    }
+
+
+    private long getLong() throws IOException {
+        counterBytes += 8;
+        return bytesToLong(input.readNBytes(8));
+    }
+
+    private static long bytesToLong(byte[] bytes) {
+        long result = 0;
+        for (byte b : bytes) {
+            result = ((result << 8) | (b & 0xff));
+        }
+        return result;
+    }
+
     @Override
     public String toString() {
-        return "JfrReader{" +
-                "features=" + features +
-                ", ticksPerSecond=" + ticksPerSecond +
-                ", startTicks=" + startTicks +
-                ", durationNanos=" + durationNanos +
-                ", startTimeNanos=" + fromNanos(startTimeNanos) +
-                ", constantPoolOffset=" + constantPoolOffset +
-                ", chunkSize=" + chunkSize +
-                ", metadataOffset=" + metadataOffset +
-                '}';
+        return "JfrReader{" + "features=" + features + ", ticksPerSecond=" + ticksPerSecond + ", startTicks=" + startTicks + ", durationNanos=" + durationNanos + ", startTimeNanos=" + fromNanos(startTimeNanos) + ", constantPoolOffset=" + constantPoolOffset + ", chunkSize=" + chunkSize + ", metadataOffset=" + metadataOffset + '}';
     }
 
     private static Instant fromNanos(long input) {

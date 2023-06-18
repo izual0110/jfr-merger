@@ -46,7 +46,9 @@ public class JfrReaderService implements InitializingBean {
 
     private void readJfr(File file, File output) {
         try (var jfr = new JfrReader(file)) {
-            jfr.readChunk();
+            while (jfr.readChunk()){
+                log.info("chunk was read");
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
