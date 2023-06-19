@@ -13,8 +13,8 @@ import java.util.List;
 public class JfrReader implements AutoCloseable {
     long counterBytes = 4; //init magic bytes
 
-    private final InputStream input;
     private final File file;
+    private InputStream input;
     private long features;
     private long ticksPerSecond;
     private long startTicks;
@@ -24,9 +24,16 @@ public class JfrReader implements AutoCloseable {
     private long chunkSize;
     private long metadataOffset;
 
-    public JfrReader(File file) throws FileNotFoundException {
+    public JfrReader(File file) throws IOException {
         this.file = file;
-        this.input = new BufferedInputStream(new FileInputStream(file));
+        initBuffer();
+    }
+
+    private void initBuffer() throws IOException {
+        if (input != null) {
+            input.close();
+        }
+        input = new BufferedInputStream(new FileInputStream(file));
     }
 
     public boolean readChunk() {
@@ -43,8 +50,17 @@ public class JfrReader implements AutoCloseable {
         return true;
     }
 
-    private void readEvents() {
+    private void readEvents() throws IOException {
+        initBuffer();
+        skipBytes(68); //skip header
 
+        long size = getLeb128Int();
+        long eventType = getLeb128long();
+        long start = getLeb128long();
+        long duration = getLeb128long();
+
+
+        log.info("Events size: {}, eventType: {}, start: {}, duration: {}", size, eventType, fromNanos(startTimeNanos+start), duration);
     }
 
     private void readConstantPool() throws IOException {
@@ -58,7 +74,7 @@ public class JfrReader implements AutoCloseable {
         long checkpointTypeMask = getByte();
         long poolCount = getLeb128Int();
 
-        log.info("size: {}, eventType: {}, start: {}, duration: {}", size, eventType, fromNanos(start), duration);
+        log.info("Constant pool size: {}, eventType: {}, start: {}, duration: {}", size, eventType, fromNanos(startTimeNanos+start), duration);
 
     }
 
@@ -72,7 +88,7 @@ public class JfrReader implements AutoCloseable {
         long metadataId = getLeb128long();
         long stringCount = getLeb128Int();
 
-        log.info("size: {}, eventType: {}, start: {}, duration: {}, metadataId: {}, stringCount: {}", size, eventType, fromNanos(start), duration, metadataId, stringCount);
+        log.info("Metadata size: {}, eventType: {}, start: {}, duration: {}, metadataId: {}, stringCount: {}", size, eventType, fromNanos(startTimeNanos + start), duration, metadataId, stringCount);
 
         for (int i = 0; i < stringCount; i++) {
             //skip
