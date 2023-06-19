@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 
@@ -52,16 +53,18 @@ public class JfrReader implements AutoCloseable {
     private void readMetadata() throws IOException {
         skipBytes(metadataOffset - counterBytes);
 
-        long size = getInt(); //87312
-        long eventType = getLong();
-        long start = getLong();
-        long duration = getLong();
-        long metadataId = getLong();
-        long stringCount = getInt(); //1783
+        long size = getLeb128Int();
+        long eventType = getLeb128long();
+        long start = getLeb128long();
+        long duration = getLeb128long();
+        long metadataId = getLeb128long();
+        long stringCount = getLeb128Int();
 
         log.info("size: {}, eventType: {}, start: {}, duration: {}, metadataId: {}, stringCount: {}", size, eventType, start, duration, metadataId, stringCount);
-        long hz = getLong();
 
+        for (int i = 0; i < stringCount; i++) {
+            log.info(getString());
+        }
     }
 
     private void skipBytes(long size) throws IOException {
@@ -133,5 +136,64 @@ public class JfrReader implements AutoCloseable {
     @SneakyThrows
     public void close() {
         input.close();
+    }
+
+    private int getLeb128Int() throws IOException {
+        int result = 0;
+        for (int shift = 0; ; shift += 7) {
+            byte b = getByte();
+            result |= (b & 0x7f) << shift;
+            if (b >= 0) {
+                return result;
+            }
+        }
+    }
+
+    private long getLeb128long() throws IOException {
+        long result = 0;
+        for (int shift = 0; shift < 56; shift += 7) {
+            byte b = getByte();
+            result |= (b & 0x7fL) << shift;
+            if (b >= 0) {
+                return result;
+            }
+        }
+        return result | (getByte() & 0xffL) << 56;
+    }
+
+    private byte getByte() throws IOException {
+        counterBytes++;
+        return input.readNBytes(1)[0];
+    }
+
+    private byte[] getBytes() throws IOException {
+        byte count = getByte();
+        counterBytes += count;
+        return input.readNBytes(count);
+    }
+
+    private String getString() throws IOException {
+        switch (getByte()) {
+            case 0 -> {
+                return null;
+            }
+            case 1 -> {
+                return "";
+            }
+            case 3 -> {
+                return new String(getBytes(), StandardCharsets.UTF_8);
+            }
+            case 4 -> {
+                char[] chars = new char[getLeb128Int()];
+                for (int i = 0; i < chars.length; i++) {
+                    chars[i] = (char) getLeb128Int();
+                }
+                return new String(chars);
+            }
+            case 5 -> {
+                return new String(getBytes(), StandardCharsets.ISO_8859_1);
+            }
+            default -> throw new IllegalArgumentException("String is corrupted");
+        }
     }
 }
