@@ -7,6 +7,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 public class JfrReader implements AutoCloseable {
@@ -46,7 +47,18 @@ public class JfrReader implements AutoCloseable {
 
     }
 
-    private void readConstantPool() {
+    private void readConstantPool() throws IOException {
+        skipBytes(constantPoolOffset - counterBytes);
+
+        long size = getLeb128Int();
+        long eventType = getLeb128long();
+        long start = getLeb128long();
+        long duration = getLeb128long();
+        long delta = getLeb128long();
+        long checkpointTypeMask = getByte();
+        long poolCount = getLeb128Int();
+
+        log.info("size: {}, eventType: {}, start: {}, duration: {}", size, eventType, fromNanos(start), duration);
 
     }
 
@@ -60,11 +72,18 @@ public class JfrReader implements AutoCloseable {
         long metadataId = getLeb128long();
         long stringCount = getLeb128Int();
 
-        log.info("size: {}, eventType: {}, start: {}, duration: {}, metadataId: {}, stringCount: {}", size, eventType, start, duration, metadataId, stringCount);
+        log.info("size: {}, eventType: {}, start: {}, duration: {}, metadataId: {}, stringCount: {}", size, eventType, fromNanos(start), duration, metadataId, stringCount);
 
         for (int i = 0; i < stringCount; i++) {
-            log.info(getString());
+            //skip
+            //log.info(getString());
         }
+
+        getAttributes(List.of());
+    }
+
+    private void getAttributes(List<String> strings) {
+        //skip
     }
 
     private void skipBytes(long size) throws IOException {
@@ -92,7 +111,7 @@ public class JfrReader implements AutoCloseable {
         this.ticksPerSecond = getLong();
         this.features = getInt();
 
-        log.info("major: " + major + ", minor: " + minor);
+        log.info("major: {}, minor: {}, count bytes: {}", major, minor, counterBytes);
         log.info(toString());
     }
 
