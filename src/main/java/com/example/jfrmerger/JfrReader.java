@@ -198,7 +198,7 @@ public class JfrReader implements AutoCloseable {
 
     private byte getByte() throws IOException {
         counterBytes++;
-        return input.readNBytes(1)[0];
+        return (byte) input.read();
     }
 
     private byte[] getBytes() throws IOException {
