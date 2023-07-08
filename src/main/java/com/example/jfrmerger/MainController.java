@@ -20,8 +20,8 @@ public class MainController {
     }
 
     @DeleteMapping("/record/{id}")
-    public List<String> getRecords(@PathVariable String id) {
-        return repository.remove(id);
+    public void getRecords(@PathVariable String id) {
+        repository.remove(id);
     }
 
 

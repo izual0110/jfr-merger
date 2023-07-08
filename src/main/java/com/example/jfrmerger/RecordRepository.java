@@ -32,12 +32,12 @@ public class RecordRepository {
         return records.values();
     }
 
-    public List<String> remove(String id) {
-        return null;
+    public void remove(String id) {
+        records.remove(UUID.fromString(id));
     }
 
     public void saveRecord(MultipartFile file) {
-        UUID uuid = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
         String fileName = fileDirectory.getAbsoluteFile() + File.separator + file.getName();
 
         try (var input = file.getInputStream()) {
@@ -45,6 +45,6 @@ public class RecordRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        records.put(uuid, JfrRecord.builder().id(uuid).fileName(fileName).build());
+        records.put(id, JfrRecord.builder().id(id).fileName(fileName).build());
     }
 }
