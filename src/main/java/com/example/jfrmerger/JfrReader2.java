@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-public class JfrReader implements AutoCloseable {
+public class JfrReader2 implements AutoCloseable {
     long counterBytes = 4; //init magic bytes
 
     private final File file;
@@ -25,7 +25,7 @@ public class JfrReader implements AutoCloseable {
     private long chunkSize;
     private long metadataOffset;
 
-    public JfrReader(File file) throws IOException {
+    public JfrReader2(File file) throws IOException {
         this.file = file;
         initBuffer();
     }
