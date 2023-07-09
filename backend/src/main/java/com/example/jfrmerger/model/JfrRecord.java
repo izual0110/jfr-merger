@@ -1,4 +1,4 @@
-package com.example.jfrmerger;
+package com.example.jfrmerger.model;
 
 import lombok.Builder;
 import lombok.Getter;

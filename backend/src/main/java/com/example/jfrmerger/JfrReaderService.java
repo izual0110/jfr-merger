@@ -1,5 +1,6 @@
 package com.example.jfrmerger;
 
+import com.example.jfrmerger.model.TimeRange;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import lombok.extern.slf4j.Slf4j;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -24,7 +26,7 @@ public class JfrReaderService {
         }
     }
 
-    public File merge(List<File> files) {
+    public File merge(List<File> files, TimeRange timeRange) {
         LocalDateTime now = LocalDateTime.now();
 
         File output = new File(root.getAbsolutePath() + File.separator + formatter.format(now) + ".jfr");
@@ -36,7 +38,10 @@ public class JfrReaderService {
             throw new RuntimeException(e);
         }
 
-        files.forEach(file -> readJfr(file, output));
+        files.forEach(file -> {
+//            readJfr(file, output);
+            writeJfr(file, output, timeRange);
+        });
 
         return output;
     }
@@ -63,16 +68,14 @@ public class JfrReaderService {
         }
     }
 
-    private void writeJfr(File input, File output) {
-//        FlightRecorder.getFlightRecorder().getRecordings().forEach(it->it.dump());
-
-//        try (Recording r = new Recording()) {
-//            r.dump();
-//        }
-
-
+    private void writeJfr(File input, File output, TimeRange timeRange) {
         try (RecordingFile recording = new RecordingFile(input.toPath())) {
-            recording.write(output.toPath(), e -> e.getThread() != null);
+            recording.write(output.toPath(), e -> {
+                if (timeRange != null) {
+                    return timeRange.validate(e.getStartTime());
+                }
+                return true;
+            });
 
         } catch (IOException e) {
             throw new RuntimeException(e);
