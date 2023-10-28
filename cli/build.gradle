@@ -1,4 +1,10 @@
-
 dependencies {
     implementation project(':common')
+}
+
+task copyJarToBin {
+    copy {
+        from 'build/libs/cli.jar'
+        into "../scripts/"
+    }
 }
