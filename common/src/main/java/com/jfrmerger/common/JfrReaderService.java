@@ -57,7 +57,7 @@ public class JfrReaderService {
         try (RecordingFile recording = new RecordingFile(input.toPath())) {
             while (recording.hasMoreEvents()) {
                 RecordedEvent e = recording.readEvent();
-                log.info("Event {} - {}", e.getEventType().getName(), e.getStartTime().getEpochSecond());
+                log.info("Event {} - {} ({})", e.getEventType().getName(), e.getStartTime(), e.getStartTime().getEpochSecond());
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

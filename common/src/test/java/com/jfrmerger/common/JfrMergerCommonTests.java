@@ -1,6 +1,7 @@
 package com.jfrmerger.common;
 
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -33,9 +34,17 @@ class JfrMergerCommonTests {
 
     @Test
     @SneakyThrows
+    void mergeJFR() {
+        File file = resourceLoader.getResource("classpath:test.jfr").getFile();
+        File merge = readerService.merge(List.of(file), null);
+        Assertions.assertNotNull(merge);
+    }
+
+    @Test
+    @SneakyThrows
     void readJFR() {
         File file = resourceLoader.getResource("classpath:test.jfr").getFile();
-        readerService.merge(List.of(file), null);
+        readerService.readJfr(file);
     }
 
 }

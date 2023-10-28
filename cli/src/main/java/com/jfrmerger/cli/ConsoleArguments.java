@@ -42,7 +42,7 @@ public class ConsoleArguments {
                     start++;
                     result.setTo(Long.parseLong(args[start]));
                     start++;
-                } else if ("--dryRun".equals(arg)) {
+                } else if ("--dryrun".equals(arg)) {
                     start++;
                     result.setDryRun(true);
                 } else {
