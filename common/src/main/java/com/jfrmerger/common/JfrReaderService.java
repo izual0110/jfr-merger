@@ -7,7 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -42,19 +43,6 @@ public class JfrReaderService {
         return output;
     }
 
-    public void generateFlameGraph(File file) {
-//        FlameGraph fg = collapsed ? new CollapsedStacks(args) : new FlameGraph(args);
-//
-//        try (one.jfr.JfrReader jfr = new one.jfr.JfrReader("null")) {
-//
-//            new jfr2flame(jfr, args).convert(fg);
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//        fg.dump();
-    }
-
     private void oldReadJfr(File file, File output) {
         try (var jfr = new JfrReader(file)) {
             while (jfr.readChunk()) {
@@ -65,12 +53,11 @@ public class JfrReaderService {
         }
     }
 
-    private void readJfr(File input, File output) {
+    public void readJfr(File input) {
         try (RecordingFile recording = new RecordingFile(input.toPath())) {
             while (recording.hasMoreEvents()) {
                 RecordedEvent e = recording.readEvent();
-//                e.getStartTime()
-                System.out.println(e);
+                log.info("Event {} - {}", e.getEventType().getName(), e.getStartTime().getEpochSecond());
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

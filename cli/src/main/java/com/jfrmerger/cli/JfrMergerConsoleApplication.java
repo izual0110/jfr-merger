@@ -43,11 +43,14 @@ public class JfrMergerConsoleApplication implements CommandLineRunner {
         ConsoleArguments arguments = of(args);
         log.info("arguments: " + arguments);
 
-        List<File> files = arguments.getFiles().stream().map(File::new).toList();
 
-        File outputFile = service.merge(files, TimeRange.of(arguments.getFrom(), arguments.getTo()));
-
-        log.info("result: {}", outputFile.getAbsolutePath());
+        if (arguments.isDryRun()) {
+            arguments.getFiles().stream().map(File::new).forEach(service::readJfr);
+        } else {
+            List<File> files = arguments.getFiles().stream().map(File::new).toList();
+            File outputFile = service.merge(files, TimeRange.of(arguments.getFrom(), arguments.getTo()));
+            log.info("result: {}", outputFile.getAbsolutePath());
+        }
     }
 
     private void printProperties() {

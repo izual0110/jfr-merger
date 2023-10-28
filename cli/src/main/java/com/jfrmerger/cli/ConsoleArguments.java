@@ -16,6 +16,7 @@ public class ConsoleArguments {
     private List<String> files = new ArrayList<>();
     private Long from;
     private Long to;
+    private boolean dryRun = false;
 
     public void addFile(String file) {
         files.add(file);
@@ -41,6 +42,9 @@ public class ConsoleArguments {
                     start++;
                     result.setTo(Long.parseLong(args[start]));
                     start++;
+                } else if ("--dryRun".equals(arg)) {
+                    start++;
+                    result.setDryRun(true);
                 } else {
                     String error = "Illegal argument " + arg;
                     log.warn(error);
