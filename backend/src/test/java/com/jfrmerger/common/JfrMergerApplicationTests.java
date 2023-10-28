@@ -1,4 +1,4 @@
-package com.example.jfrmerger;
+package com.jfrmerger.common;
 
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;

@@ -1,2 +1,4 @@
 rootProject.name = 'jfr-merger'
 include 'backend'
+include 'common'
+include 'cli'

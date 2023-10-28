@@ -1,4 +1,4 @@
-package com.example.jfrmerger;
+package com.jfrmerger.common;
 
 import jdk.jfr.consumer.RecordedEvent;
 import lombok.SneakyThrows;

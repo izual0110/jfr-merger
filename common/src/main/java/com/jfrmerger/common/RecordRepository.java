@@ -1,10 +1,9 @@
-package com.example.jfrmerger;
+package com.jfrmerger.common;
 
-import com.example.jfrmerger.model.JfrRecord;
+import com.jfrmerger.common.model.JfrRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -37,11 +36,11 @@ public class RecordRepository {
         records.remove(UUID.fromString(id));
     }
 
-    public void saveRecord(MultipartFile file) {
+    public void saveRecord(InputStream stream, String name) {
         UUID id = UUID.randomUUID();
-        String fileName = fileDirectory.getAbsoluteFile() + File.separator + file.getName();
+        String fileName = fileDirectory.getAbsoluteFile() + File.separator + name;
 
-        try (var input = file.getInputStream()) {
+        try (var input = stream) {
             Files.copy(input, Path.of(fileName));
         } catch (IOException e) {
             throw new RuntimeException(e);

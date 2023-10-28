@@ -1,6 +1,6 @@
-package com.example.jfrmerger;
+package com.jfrmerger.common;
 
-import com.example.jfrmerger.model.TimeRange;
+import com.jfrmerger.common.model.TimeRange;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -44,6 +43,19 @@ public class JfrReaderService {
         });
 
         return output;
+    }
+
+    public void generateFlameGraph(File file) {
+//        FlameGraph fg = collapsed ? new CollapsedStacks(args) : new FlameGraph(args);
+//
+//        try (one.jfr.JfrReader jfr = new one.jfr.JfrReader("null")) {
+//
+//            new jfr2flame(jfr, args).convert(fg);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        fg.dump();
     }
 
     private void oldReadJfr(File file, File output) {

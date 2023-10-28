@@ -1,10 +1,13 @@
-package com.example.jfrmerger;
+package com.jfrmerger.backend;
 
-import com.example.jfrmerger.model.JfrRecord;
+import com.jfrmerger.common.RecordRepository;
+import com.jfrmerger.common.model.JfrRecord;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 
 @RestController
@@ -26,7 +29,9 @@ public class MainController {
 
 
     @PostMapping("/record")
-    public void saveRecord(@RequestParam("file") MultipartFile file) {
-        repository.saveRecord(file);
+    public void saveRecord(@RequestParam("file") MultipartFile file) throws IOException {
+        try (InputStream stream = file.getInputStream()) {
+            repository.saveRecord(stream, file.getName());
+        }
     }
 }
