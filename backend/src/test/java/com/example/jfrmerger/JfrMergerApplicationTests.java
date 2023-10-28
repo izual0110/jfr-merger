@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ResourceLoader;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -29,7 +30,8 @@ class JfrMergerApplicationTests {
     @Test
     @SneakyThrows
     void readJFR() {
-        readerService.merge(List.of(resourceLoader.getResource("classpath:test.jfr").getFile()), null);
+        File file = resourceLoader.getResource("classpath:test.jfr").getFile();
+        readerService.merge(List.of(file), null);
     }
 
 }
