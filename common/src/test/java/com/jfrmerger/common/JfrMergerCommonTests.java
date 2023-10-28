@@ -1,10 +1,11 @@
-package com.jfrmerger.cli;
+package com.jfrmerger.common;
 
-import com.jfrmerger.common.JfrReaderService;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ResourceLoader;
 
 import java.io.File;
@@ -14,12 +15,27 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 @SpringBootTest
-class JfrMergerApplicationTests {
+@SpringBootConfiguration
+@Import(JfrMergerCommonConfig.class)
+class JfrMergerCommonTests {
+
+    @Autowired
+    private JfrReaderService readerService;
+    @Autowired
+    private ResourceLoader resourceLoader;
 
     @Test
-    //-Duser.timezone="UTC"
+        //-Duser.timezone="UTC"
     void contextLoads() {
         System.out.println(OffsetDateTime.now(ZoneOffset.UTC));
         System.out.println(LocalDateTime.now().toInstant(ZoneOffset.UTC));
     }
+
+    @Test
+    @SneakyThrows
+    void readJFR() {
+        File file = resourceLoader.getResource("classpath:test.jfr").getFile();
+        readerService.merge(List.of(file), null);
+    }
+
 }

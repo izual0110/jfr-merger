@@ -3,7 +3,9 @@ package com.jfrmerger.common;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ResourceLoader;
 
 import java.io.File;
@@ -13,6 +15,8 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 @SpringBootTest
+@SpringBootConfiguration
+@Import(JfrMergerCommonConfig.class)
 class JfrMergerApplicationTests {
 
     @Autowired
