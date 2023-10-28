@@ -37,10 +37,7 @@ public class JfrReaderService {
             throw new RuntimeException(e);
         }
 
-        files.forEach(file -> {
-//            readJfr(file, output);
-            writeJfr(file, output, timeRange);
-        });
+        files.forEach(file -> writeJfr(file, output, timeRange));
 
         return output;
     }

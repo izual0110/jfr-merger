@@ -1,13 +1,15 @@
 package com.jfrmerger.common.model;
 
-import lombok.Builder;
-
 import java.time.Instant;
 
-@Builder
-public class TimeRange {
-    private final Instant start;
-    private final Instant end;
+public record TimeRange(Instant start, Instant end) {
+
+    public static TimeRange of(Long start, Long end) {
+        if (start == null || end == null) {
+            return null;
+        }
+        return new TimeRange(Instant.ofEpochSecond(0, start), Instant.ofEpochSecond(0, end));
+    }
 
     public boolean validate(Instant date) {
         return date.isAfter(start) && date.isBefore(end);
