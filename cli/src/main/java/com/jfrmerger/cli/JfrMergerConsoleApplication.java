@@ -21,6 +21,6 @@ public class JfrMergerConsoleApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        log.info("Hello!");
+        log.info("Hello!!!");
     }
 }
