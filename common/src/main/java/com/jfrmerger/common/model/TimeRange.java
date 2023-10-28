@@ -8,7 +8,7 @@ public record TimeRange(Instant start, Instant end) {
         if (start == null || end == null) {
             return null;
         }
-        return new TimeRange(Instant.ofEpochSecond(0, start), Instant.ofEpochSecond(0, end));
+        return new TimeRange(Instant.ofEpochSecond(start), Instant.ofEpochSecond(end));
     }
 
     public boolean validate(Instant date) {
