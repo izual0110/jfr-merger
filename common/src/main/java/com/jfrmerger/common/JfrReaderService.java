@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
 import java.util.List;
 
 @Service
@@ -57,7 +58,7 @@ public class JfrReaderService {
         try (RecordingFile recording = new RecordingFile(input.toPath())) {
             while (recording.hasMoreEvents()) {
                 RecordedEvent e = recording.readEvent();
-                log.info("Event {} - {} ({})", e.getEventType().getName(), e.getStartTime(), e.getStartTime().getEpochSecond());
+                log.info("Event {} - {} ({})", e.getEventType().getName(), e.getStartTime(), e.getStartTime().get(ChronoField.MILLI_OF_SECOND));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

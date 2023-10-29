@@ -13,8 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TimeRangeTest {
     @Test
     void testTimeRange() {
-        long start = 1698513910L;
-        long end = 1698513911L;
+        long start = 1698513910000L;
+        long end = 1698513911000L;
 
         TimeRange timeRange = TimeRange.of(start, end);
 
