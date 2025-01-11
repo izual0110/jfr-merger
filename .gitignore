@@ -12,6 +12,9 @@ pom.xml.asc
 
 ### VS Code ###
 .vscode/
+.lsp/
+.clj-kondo/
+.calva/
 
 ### IntelliJ IDEA ###
 .idea/
