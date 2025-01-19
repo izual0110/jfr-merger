@@ -9,6 +9,10 @@ pom.xml.asc
 /.lein-*
 /.nrepl-port
 /.prepl-port
+/.shadow-cljs
+/.cpcache
+/node_modules
+/resources/public/js
 
 ### VS Code ###
 .vscode/
