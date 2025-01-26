@@ -1,0 +1,7 @@
+{:deps {:aliases [:cljs]}
+ :builds {:app {
+                :target :browser 
+                :output-dir "resources/public/js"
+                :modules {:app {:init-fn jfr.client/init}}
+                :devtools {:reload-strategy :full}}}
+ :dev-http {5003 "resources/public"}}
