@@ -2,7 +2,8 @@
 
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         http-kit/http-kit {:mvn/version "2.8.0"}
-        compojure/compojure {:mvn/version "1.7.1"}}
+        compojure/compojure {:mvn/version "1.7.1"}
+        one/convert {:local/root "lib/jfr-converter.jar"}}
 
  :aliases
  {:uberjar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]
