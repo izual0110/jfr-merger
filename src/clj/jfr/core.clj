@@ -11,10 +11,9 @@
    :headers {"Content-Type" "text/html"}
    :body    (html [:a {:href "/index.html"} "index"])})
 
+;; (System/getProperty "user.dir") 
 
-(System/getProperty "user.dir") 
-
-(JfrToHeatmap/convert "input" "output" nil)
+;(JfrToHeatmap/convert "input" "output" nil)
 
 (defn generate-heatmap [body]
   {:status  200
