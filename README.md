@@ -11,8 +11,10 @@ FIXME: description
 > docker run -it -v $(pwd):/app -w /app node:23 npm install --save-dev shadow-cljs
 > 
 > mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/nightly/jfr-converter.jar
-> 
+>
 > clj -M:cljs
+> 
+> clj -M:repl
 
 {
     "dependencies": {
