@@ -17,5 +17,5 @@
   ([key & xs] (when (nil? @config) (reset! config (load-config))) 
    (get-in @config (concat [key] xs))))
 
-(defn get-jfr-dir [] (.getAbsolutePath (java.io.File. (get-property :jfr-dir))))
+(defn get-jfr-data-path [] (.getAbsolutePath (java.io.File. (get-property :get-jfr-data-path))))
 

@@ -2,7 +2,8 @@
   (:use [compojure.route :only [files not-found resources]]
         [compojure.core :only [defroutes GET POST DELETE ANY context]]
         [org.httpkit.server :refer [run-server]]
-        [hiccup.core :refer [html]])
+        [hiccup.core :refer [html]]
+        [jfr.storage :as storage])
   (:import [one.convert JfrToHeatmap])
   (:gen-class))
 
@@ -22,12 +23,13 @@
 
 (defroutes app
   (GET "/" [] index)
-  (POST "/heatmap" {body :body} (generate-heatmap body))
+  (POST "/api/heatmap" {body :body} (generate-heatmap body))
   (resources "/"))
 
 (defonce server (atom nil))
 
 (defn stop-server []
+  (storage/destroy)
   (when-not (nil? @server)
     (@server :timeout 100)
     (reset! server nil)))
@@ -37,6 +39,7 @@
   [& args]
   (println "Hello, World!")
   (println "http://localhost:8080/index.html")
+  (storage/init)
   (reset! server (run-server #'app {:port 8080})))
 
 

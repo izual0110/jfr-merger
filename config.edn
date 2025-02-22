@@ -1,1 +1,1 @@
-{:jfr-dir "resources/jfrs"}
+{:get-jfr-data-path "resources/jfrs"}
