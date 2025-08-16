@@ -2,29 +2,58 @@
   (:use [compojure.route :only [files not-found resources]]
         [compojure.core :only [defroutes GET POST DELETE ANY context]]
         [org.httpkit.server :refer [run-server]]
-        [hiccup.core :refer [html]]
-        [jfr.storage :as storage])
-  (:import [one.convert JfrToHeatmap])
+        [hiccup2.core :refer [html]])
+  (:import (java.util UUID)
+           (java.nio.file Files Paths)
+           (one.convert JfrToHeatmap Arguments))
+  (:require [clojure.java.io :as io]
+            [jfr.storage :as storage]
+            [ring.middleware.multipart-params :refer [wrap-multipart-params]])
   (:gen-class))
 
-(defn index [req]
+(defn index [_]
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (html [:a {:href "/index.html"} "index"])})
 
-;; (System/getProperty "user.dir") 
+(defn convert [in out]
+  (let[args (Arguments. (into-array String ["--output" "heatmap" in out]))]
+   (JfrToHeatmap/convert in out args)))
 
-;(JfrToHeatmap/convert "input" "output" nil)
+(defn generate-heatmap [{:keys [params]}]
+  (let [uuid (str (UUID/randomUUID))
+        temp-dir "resources/temp"
+        merged-path (str temp-dir "/" uuid ".jfr")
+        heatmap-path (str temp-dir "/new_" uuid ".html")
+        ;; Собираем все файлы из params (могут быть одиночные или список)
+        files (get params "files")
+        files (->> files
+                   (filter #(and (map? %) (contains? % :tempfile))))]
+    (io/make-parents merged-path)
+    (with-open [out (io/output-stream merged-path)]
+      (doseq [file files]
+        (with-open [in (io/input-stream (:tempfile file))]
+          (io/copy in out))))
+    (convert merged-path heatmap-path)
+    (let [bytes (Files/readAllBytes (Paths/get heatmap-path (make-array String 0)))]
+      (storage/save uuid bytes)
+      {:status 200
+       :headers {"Content-Type" "text/plain"}
+       :body uuid})))
 
-(defn generate-heatmap [body]
-  {:status  200
-  :headers {"Content-Type" "text/html"}
-  :body (str (java.util.UUID/randomUUID))})
+(defn get-heatmap [uuid]
+  (let [data (storage/load uuid)]
+    (if data
+      {:status 200
+       :headers {"Content-Type" "text/html"}
+       :body data}
+      {:status 404
+       :body "Heatmap not found"})))
 
-(defroutes app
+(defroutes handlers
   (GET "/" [] index)
-  (POST "/api/heatmap" {body :body} (generate-heatmap body))
-  (GET "/api/heatmap/:uuid" [uuid] uuid)
+  (POST "/api/heatmap" req (generate-heatmap req))
+  (GET "/api/heatmap/:uuid" [uuid] (get-heatmap uuid))
   (resources "/"))
 
 (defonce server (atom nil))
@@ -35,6 +64,10 @@
     (@server :timeout 100)
     (reset! server nil)))
 
+(def app
+  (-> handlers
+      wrap-multipart-params))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
@@ -44,5 +77,5 @@
   (reset! server (run-server #'app {:port 8080})))
 
 
-(-main)
+;; (-main)
 ;; (stop-server)
