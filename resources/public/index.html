@@ -78,7 +78,7 @@
   const historyEl = document.getElementById('history');
   const clearBtn = document.getElementById('clear');
 
-  // 4) Работа с локальным хранилищем:
+  // === История ссылок справа ===
   function loadHistory(){
     try{ return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }catch{ return []; }
   }
@@ -90,8 +90,6 @@
     renderHistory();
   }
   function clearHistory(){ saveHistory([]); renderHistory(); }
-
-  // 5) Рендер списка ссылок справа:
   function renderHistory(){
     const arr = loadHistory();
     historyEl.innerHTML = '';
@@ -101,21 +99,27 @@
       historyEl.append(li);
       return;
     }
-    arr.forEach((link, i) => {
+    arr.forEach(link => {
       const li = document.createElement('li');
       const a = document.createElement('a');
-      a.href = link; a.target = '_blank'; a.rel = 'noopener';
+      a.href = '/api/heatmap/'+link; a.target = '_blank'; a.rel = 'noopener';
       a.textContent = link;
       li.append(a);
       historyEl.append(li);
     });
   }
 
-  // 6) Рендер списка выбранных файлов:
-  function renderList(files){
-    list.innerHTML = '';
+  // === Работа с файлами слева ===
+  let batchSeq = 0;            // счётчик партий выбранных файлов
+  let lastSelectedBatchId = 0; // id последней выбранной партии (то, что отправляем)
+
+  // Рендер: добавить элементы в список (НЕ очищаем список)
+  function appendToList(files, batchId){
+    const stamp = new Date().toLocaleTimeString();
     [...files].forEach(f => {
       const li = document.createElement('li');
+      li.dataset.batch = String(batchId);
+      li.title = `Партия #${batchId} · ${stamp}`;
       const name = document.createElement('span');
       const size = document.createElement('small');
       name.textContent = f.name;
@@ -125,25 +129,35 @@
     });
   }
 
-  // 7) Назначить файлы инпуту и перерисовать:
+  // Назначить ТЕКУЩИЕ файлы (перезаписываем input), а визуально — ДОБАВЛЯЕМ в конец списка
   function setFiles(files){
     const dt = new DataTransfer();
     [...files].forEach(f => dt.items.add(f));
-    fileInput.files = dt.files;
-    renderList(fileInput.files);
+    fileInput.files = dt.files; // в input только текущая партия
+    lastSelectedBatchId = ++batchSeq;
+    appendToList(files, lastSelectedBatchId);
   }
 
-  // 8) Сброс выбора после отправки:
-  function resetSelection(){
+  // Отложенное скрытие элементов конкретной партии через 10 секунд
+  function scheduleBatchClear(batchId, delayMs = 10000){
+    setTimeout(() => {
+      [...list.querySelectorAll(`li[data-batch="${batchId}"]`)].forEach(el => el.remove());
+    }, delayMs);
+  }
+
+  // Полный сброс только input и прогресса (СПИСОК НЕ ТРОГАЕМ — он исчезнет по таймеру)
+  function softResetAfterSend(){
+    // очищаем input
     const dt = new DataTransfer();
     fileInput.files = dt.files;
-    setInterval(()=>{list.innerHTML = ''; status.textContent = '';}, 1000);
+    // прогресс и статус оставим: статус покажет «Готово», прогресс скрываем
     prog.value = 0; prog.hidden = true;
   }
 
-  // 9) Отправка файлов через fetch:
+  // Отправка файлов через fetch (асинхронно)
   async function sendFiles(){
     if(!fileInput.files.length){ alert('Сначала выберите файлы.'); return; }
+    const currentBatch = lastSelectedBatchId; // запоминаем, что именно отправляем
     try{
       status.textContent = 'Загрузка…';
       prog.hidden = false;
@@ -157,22 +171,23 @@
       if(!resp.ok) throw new Error('HTTP '+resp.status);
 
       const link = await resp.text().catch(()=>({}));
-      console.log('Ответ сервера:', link);
-      // const link = data.html_url || data.link || data.url || data.href;
       if(!link){
         status.textContent = 'Загружено, но сервер не прислал ссылку (ожидались html_url/link/url/href).';
       } else {
         status.textContent = 'Готово';
         addToHistory(link);
       }
-      resetSelection();
+
+      // Не удаляем текущие элементы сразу — только через 10 секунд
+      scheduleBatchClear(currentBatch, 10000);
+      softResetAfterSend();
     } catch(err){
       status.textContent = 'Ошибка: ' + err.message;
       prog.hidden = true;
     }
   }
 
-  // 10) DnD события:
+  // DnD события
   ['dragenter','dragover'].forEach(ev =>
     drop.addEventListener(ev, e => { e.preventDefault(); e.dataTransfer.dropEffect='copy'; drop.classList.add('highlight'); })
   );
@@ -180,14 +195,14 @@
     drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('highlight'); if(ev==='drop'){ setFiles(e.dataTransfer.files); }})
   );
 
-  // 11) Клики и изменения:
+  // Клики и изменения
   // drop.addEventListener('click', () => fileInput.click());
   pick.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', () => renderList(fileInput.files));
+  fileInput.addEventListener('change', () => setFiles(fileInput.files));
   sendBtn.addEventListener('click', sendFiles);
   clearBtn.addEventListener('click', clearHistory);
 
-  // 12) Инициализация:
+  // Инициализация
   renderHistory();
 })();
 </script>

@@ -18,12 +18,13 @@
 
 (defn generate-heatmap [body]
   {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (html [:a {:href "/index.html"} (slurp (.bytes body))])})
+  :headers {"Content-Type" "text/html"}
+  :body (str (java.util.UUID/randomUUID))})
 
 (defroutes app
   (GET "/" [] index)
   (POST "/api/heatmap" {body :body} (generate-heatmap body))
+  (GET "/api/heatmap/:uuid" [uuid] uuid)
   (resources "/"))
 
 (defonce server (atom nil))
