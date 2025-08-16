@@ -7,9 +7,9 @@
 (def db-path (env/get-jfr-data-path))
 (defonce db-atom (atom nil))
 
-(defn open-db []
+(defn open-db 
   "Opens RocksDB with settings if not already open"
-  (when (nil? @db-atom)
+  [] (when (nil? @db-atom)
     (let [options (doto (Options.)
                     (.setCreateIfMissing true)
                     (.setEnableBlobFiles true)
@@ -17,9 +17,9 @@
                     (.setBlobCompressionType CompressionType/ZSTD_COMPRESSION))]
       (reset! db-atom (RocksDB/open options db-path)))))
 
-(defn close-db []
+(defn close-db 
   "Closes the global RocksDB instance"
-  (when-let [db @db-atom]
+  [] (when-let [db @db-atom]
     (.close db)
     (reset! db-atom nil)))
 
