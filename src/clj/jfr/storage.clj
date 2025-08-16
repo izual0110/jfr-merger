@@ -24,12 +24,12 @@
     (.close db)
     (reset! db-atom nil)))
 
-(defn save [key bytes]
+(defn save-bytes [key bytes]
   (when-let [db @db-atom]
     (locking db
       (.put db (.getBytes key) bytes))))
 
-(defn load [key]
+(defn load-bytes [key]
   (when-let [db @db-atom]
     (.get db (.getBytes key))))
 

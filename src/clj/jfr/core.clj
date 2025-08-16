@@ -36,13 +36,13 @@
           (io/copy in out))))
     (convert merged-path heatmap-path)
     (let [bytes (Files/readAllBytes (Paths/get heatmap-path (make-array String 0)))]
-      (storage/save uuid bytes)
+      (storage/save-bytes uuid bytes)
       {:status 200
        :headers {"Content-Type" "text/plain"}
        :body uuid})))
 
 (defn get-heatmap [uuid]
-  (let [data (storage/load uuid)]
+  (let [data (storage/load-bytes uuid)]
     (if data
       {:status 200
        :headers {"Content-Type" "text/html"}
