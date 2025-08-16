@@ -10,7 +10,7 @@ RUN dnf install -y java-21-openjdk curl rlwrap && \
 WORKDIR /app
 COPY . /app
 
-RUN mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.1/jfr-converter.jar
+RUN mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/nightly/jfr-converter.jar
 
 RUN  /app/clojure/bin/clj -T:build uber
 RUN ls -la /app/target
