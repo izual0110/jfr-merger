@@ -1,15 +1,15 @@
-(ns jfr.core
-  (:use [compojure.route :only [files not-found resources]]
-        [compojure.core :only [defroutes GET POST DELETE ANY context]]
-        [org.httpkit.server :refer [run-server]]
-        [hiccup2.core :refer [html]])
+(ns jfr.core 
   (:import (java.util UUID)
            (java.nio.file Files Paths)
            (one.convert JfrToHeatmap Arguments))
   (:require [clojure.java.io :as io]
             [jfr.storage :as storage]
             [ring.middleware.multipart-params :refer [wrap-multipart-params]]
-            [jfr.environ :as env])
+            [jfr.environ :as env]
+            [compojure.route :refer [resources]]
+            [compojure.core :refer [defroutes GET POST]]
+            [org.httpkit.server :refer [run-server]]
+            [hiccup2.core :refer [html]])
   (:gen-class))
 
 (def temp-dir (env/temp-dir))
@@ -27,7 +27,6 @@
   (let [uuid (str (UUID/randomUUID))
         merged-path (str temp-dir "/" uuid ".jfr")
         heatmap-path (str temp-dir "/new_" uuid ".html")
-        ;; Собираем все файлы из params (могут быть одиночные или список)
         files (get params "files")
         files (->> files
                    (filter #(and (map? %) (contains? % :tempfile))))]
@@ -72,7 +71,7 @@
 
 (defn -main
   "I don't do a whole lot ... yet."
-  [& args]
+  [& _]
   (println "Hello, World!")
   (println "http://localhost:8080/index.html")
   (storage/init)
