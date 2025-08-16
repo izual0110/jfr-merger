@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Загрузка файлов — async + история ссылок</title>
+  <title>File Upload — async + link history</title>
   <style>
     :root{--bg:#0b1220;--fg:#e9eef5;--acc:#3b82f6;--mut:#96a0b5}
     *{box-sizing:border-box}
@@ -28,17 +28,17 @@
 </head>
 <body>
   <div class="grid">
-    <section class="panel" aria-label="Загрузка файлов">
-      <h1>Загрузка файлов (async)</h1>
-      <p>Перетащите файлы или выберите вручную. Отправка через <code>fetch</code>. Сервер возвращает ссылку на HTML.</p>
+    <section class="panel" aria-label="File upload">
+      <h1>File Upload (async)</h1>
+      <p>Drag and drop files or select manually. Upload via <code>fetch</code>. The server returns a link to the HTML.</p>
 
       <input id="fileInput" type="file" name="files" multiple hidden>
 
-      <div id="drop" class="drop" tabindex="0" role="button" aria-label="Область для перетаскивания файлов">
-        Перетащите файлы сюда или нажмите
+      <div id="drop" class="drop" tabindex="0" role="button" aria-label="Drop area for files">
+        Drag files here or click
         <div class="btns">
-          <button type="button" id="pick" class="ghost">Выбрать файлы</button>
-          <button type="button" id="send">Отправить файлы</button>
+          <button type="button" id="pick" class="ghost">Choose files</button>
+          <button type="button" id="send">Send files</button>
         </div>
       </div>
 
@@ -46,13 +46,13 @@
       <div class="row"><progress id="prog" max="100" value="0" hidden></progress><span id="status" aria-live="polite"></span></div>
     </section>
 
-    <section class="panel" aria-label="История ссылок">
-      <h1>Предпросмотр справа → список ссылок</h1>
-      <p>Сохраняется в <code>localStorage</code>. Открывается в новой вкладке.</p>
+    <section class="panel" aria-label="Link history">
+      <h1>Preview on the right → list of links</h1>
+      <p>Saved in <code>localStorage</code>. Opens in a new tab.</p>
       <div class="history">
         <div class="row" style="justify-content:space-between;margin:0 0 6px 0">
-          <strong>История</strong>
-          <button type="button" id="clear" class="ghost">Очистить</button>
+          <strong>History</strong>
+          <button type="button" id="clear" class="ghost">Clear</button>
         </div>
         <ol id="history"></ol>
       </div>
@@ -62,12 +62,12 @@
 <script>
 (() => {
   'use strict';
-  // 1) Настройки. Поставьте свой реальный эндпоинт:
+  // 1) Settings. Set your real endpoint here:
   const UPLOAD_URL = '/api/heatmap';
-  // 2) Ключи в localStorage:
+  // 2) Keys in localStorage:
   const LS_KEY = 'htmlLinksHistory';
 
-  // 3) DOM-элементы:
+  // 3) DOM elements:
   const drop = document.getElementById('drop');
   const fileInput = document.getElementById('fileInput');
   const pick = document.getElementById('pick');
@@ -78,7 +78,7 @@
   const historyEl = document.getElementById('history');
   const clearBtn = document.getElementById('clear');
 
-  // === История ссылок справа ===
+  // === Link history on the right ===
   function loadHistory(){
     try{ return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }catch{ return []; }
   }
@@ -95,7 +95,7 @@
     historyEl.innerHTML = '';
     if(arr.length === 0){
       const li = document.createElement('li');
-      li.textContent = 'Пока пусто';
+      li.textContent = 'No links yet';
       historyEl.append(li);
       return;
     }
@@ -109,17 +109,17 @@
     });
   }
 
-  // === Работа с файлами слева ===
-  let batchSeq = 0;            // счётчик партий выбранных файлов
-  let lastSelectedBatchId = 0; // id последней выбранной партии (то, что отправляем)
+  // === File handling on the left ===
+  let batchSeq = 0;            // counter for selected file batches
+  let lastSelectedBatchId = 0; // id of the last selected batch (what we send)
 
-  // Рендер: добавить элементы в список (НЕ очищаем список)
+  // Render: add items to the list (DO NOT clear the list)
   function appendToList(files, batchId){
     const stamp = new Date().toLocaleTimeString();
     [...files].forEach(f => {
       const li = document.createElement('li');
       li.dataset.batch = String(batchId);
-      li.title = `Партия #${batchId} · ${stamp}`;
+      li.title = `Batch #${batchId} · ${stamp}`;
       const name = document.createElement('span');
       const size = document.createElement('small');
       name.textContent = f.name;
@@ -129,37 +129,37 @@
     });
   }
 
-  // Назначить ТЕКУЩИЕ файлы (перезаписываем input), а визуально — ДОБАВЛЯЕМ в конец списка
+  // Set CURRENT files (overwrite input), visually — ADD to the end of the list
   function setFiles(files){
     const dt = new DataTransfer();
     [...files].forEach(f => dt.items.add(f));
-    fileInput.files = dt.files; // в input только текущая партия
+    fileInput.files = dt.files; // only current batch in input
     lastSelectedBatchId = ++batchSeq;
     appendToList(files, lastSelectedBatchId);
   }
 
-  // Отложенное скрытие элементов конкретной партии через 10 секунд
+  // Delayed removal of a specific batch after 10 seconds
   function scheduleBatchClear(batchId, delayMs = 10000){
     setTimeout(() => {
       [...list.querySelectorAll(`li[data-batch="${batchId}"]`)].forEach(el => el.remove());
     }, delayMs);
   }
 
-  // Полный сброс только input и прогресса (СПИСОК НЕ ТРОГАЕМ — он исчезнет по таймеру)
+  // Full reset of input and progress (DO NOT clear the list — it will disappear by timer)
   function softResetAfterSend(){
-    // очищаем input
+    // clear input
     const dt = new DataTransfer();
     fileInput.files = dt.files;
-    // прогресс и статус оставим: статус покажет «Готово», прогресс скрываем
+    // leave progress and status: status will show "Done", hide progress
     prog.value = 0; prog.hidden = true;
   }
 
-  // Отправка файлов через fetch (асинхронно)
+  // Send files via fetch (async)
   async function sendFiles(){
-    if(!fileInput.files.length){ alert('Сначала выберите файлы.'); return; }
-    const currentBatch = lastSelectedBatchId; // запоминаем, что именно отправляем
+    if(!fileInput.files.length){ alert('Please select files first.'); return; }
+    const currentBatch = lastSelectedBatchId; // remember what exactly we send
     try{
-      status.textContent = 'Загрузка…';
+      status.textContent = 'Uploading…';
       prog.hidden = false;
       let fake = 0; const t = setInterval(()=>{fake=Math.min(99, fake+3); prog.value=fake;}, 120);
 
@@ -172,22 +172,22 @@
 
       const link = await resp.text().catch(()=>({}));
       if(!link){
-        status.textContent = 'Загружено, но сервер не прислал ссылку (ожидались html_url/link/url/href).';
+        status.textContent = 'Uploaded, but the server did not return a link (expected html_url/link/url/href).';
       } else {
-        status.textContent = 'Готово';
+        status.textContent = 'Done';
         addToHistory(link);
       }
 
-      // Не удаляем текущие элементы сразу — только через 10 секунд
+      // Do not remove current items immediately — only after 10 seconds
       scheduleBatchClear(currentBatch, 10000);
       softResetAfterSend();
     } catch(err){
-      status.textContent = 'Ошибка: ' + err.message;
+      status.textContent = 'Error: ' + err.message;
       prog.hidden = true;
     }
   }
 
-  // DnD события
+  // DnD events
   ['dragenter','dragover'].forEach(ev =>
     drop.addEventListener(ev, e => { e.preventDefault(); e.dataTransfer.dropEffect='copy'; drop.classList.add('highlight'); })
   );
@@ -195,14 +195,14 @@
     drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('highlight'); if(ev==='drop'){ setFiles(e.dataTransfer.files); }})
   );
 
-  // Клики и изменения
+  // Clicks and changes
   // drop.addEventListener('click', () => fileInput.click());
   pick.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => setFiles(fileInput.files));
   sendBtn.addEventListener('click', sendFiles);
   clearBtn.addEventListener('click', clearHistory);
 
-  // Инициализация
+  // Initialization
   renderHistory();
 })();
 </script>
