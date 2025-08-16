@@ -10,3 +10,8 @@
  :response
  (fn [db _]
    (:response db)))
+
+(rf/reg-sub
+ :files
+ (fn [db _]
+   (:files db)))

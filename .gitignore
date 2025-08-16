@@ -13,6 +13,7 @@ pom.xml.asc
 /.cpcache
 /node_modules
 /resources/public/js
+/resources/temp
 
 ### VS Code ###
 .vscode/

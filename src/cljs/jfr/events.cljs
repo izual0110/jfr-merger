@@ -32,3 +32,23 @@
  :url-failure
  (fn [db [_ error]]
    (assoc db :response (str "Ошибка: " error))))
+
+(rf/reg-event-db
+ :set-files
+ (fn [db [_ files]]
+   (assoc db :files files)))
+
+(rf/reg-event-fx
+ :send-files
+ (fn [{:keys [db]} _]
+   (let [files (:files db)]
+     (when (and files (pos? (.-length files)))
+       {:http-xhrio {:method          :post
+                     :uri             "/api/heatmap"
+                     :body            (let [form-data (js/FormData.)]
+                                        (dotimes [i (.-length files)]
+                                          (.append form-data "file" (.item files i)))
+                                        form-data)
+                     :response-format {:type :json :keywords? true}
+                     :on-success      [:url-success]
+                     :on-failure      [:url-failure]}}))))
