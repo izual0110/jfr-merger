@@ -9,15 +9,15 @@
             [compojure.route :refer [resources]]
             [compojure.core :refer [defroutes GET POST]]
             [org.httpkit.server :refer [run-server]]
-            [hiccup2.core :refer [html]])
+            [hiccup2.core :as h])
   (:gen-class))
 
 (def temp-dir (env/temp-dir))
 
 (defn index [_]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (html [:a {:href "/index.html"} "index"])})
+  {:status  302
+   :headers {"Location" "/index.html"}
+   :body    (str (h/html [:a {:href "/index.html"} "index"]))})
 
 (defn convert [in out]
   (let[args (Arguments. (into-array String ["--output" "heatmap" in out]))]
