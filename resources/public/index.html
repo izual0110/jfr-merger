@@ -1,13 +1,195 @@
-<html> 
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Hello Bulma!</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-      </head>
-      <body>
-        <div id="root">
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Загрузка файлов — async + история ссылок</title>
+  <style>
+    :root{--bg:#0b1220;--fg:#e9eef5;--acc:#3b82f6;--mut:#96a0b5}
+    *{box-sizing:border-box}
+    body{margin:0;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:min(1040px,100%)}
+    .panel{background:#0f172a;border:1px solid #223;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.3);padding:18px;min-height:360px}
+    h1{margin:0 0 8px;font-size:20px}
+    p{margin:0 0 12px;color:var(--mut)}
+    .drop{border:2px dashed #334155;border-radius:14px;padding:24px;text-align:center;transition:.15s;user-select:none}
+    .drop.highlight{border-color:var(--acc);background:rgba(59,130,246,.08)}
+    .btns{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    button,.ghost{padding:10px 14px;border-radius:10px;border:0;background:var(--acc);color:#fff;cursor:pointer}
+    .ghost{background:#1f2937;color:var(--fg)}
+    ul{list-style:none;padding:0;margin:12px 0 0;max-height:180px;overflow:auto;border-top:1px solid #223}
+    li{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed #223}
+    small{color:var(--mut)}
+    .history{border:2px dashed #334155;border-radius:14px;padding:12px;min-height:360px}
+    .history ol{margin:8px 0 0;padding-left:18px;max-height:420px;overflow:auto}
+    .row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
+    progress{width:100%;height:10px}
+  </style>
+</head>
+<body>
+  <div class="grid">
+    <section class="panel" aria-label="Загрузка файлов">
+      <h1>Загрузка файлов (async)</h1>
+      <p>Перетащите файлы или выберите вручную. Отправка через <code>fetch</code>. Сервер возвращает ссылку на HTML.</p>
+
+      <input id="fileInput" type="file" name="files" multiple hidden>
+
+      <div id="drop" class="drop" tabindex="0" role="button" aria-label="Область для перетаскивания файлов">
+        Перетащите файлы сюда или нажмите
+        <div class="btns">
+          <button type="button" id="pick" class="ghost">Выбрать файлы</button>
+          <button type="button" id="send">Отправить файлы</button>
         </div>
-        <script src="/js/app.js"></script>
-      </body>
+      </div>
+
+      <ul id="list" aria-live="polite"></ul>
+      <div class="row"><progress id="prog" max="100" value="0" hidden></progress><span id="status" aria-live="polite"></span></div>
+    </section>
+
+    <section class="panel" aria-label="История ссылок">
+      <h1>Предпросмотр справа → список ссылок</h1>
+      <p>Сохраняется в <code>localStorage</code>. Открывается в новой вкладке.</p>
+      <div class="history">
+        <div class="row" style="justify-content:space-between;margin:0 0 6px 0">
+          <strong>История</strong>
+          <button type="button" id="clear" class="ghost">Очистить</button>
+        </div>
+        <ol id="history"></ol>
+      </div>
+    </section>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+  // 1) Настройки. Поставьте свой реальный эндпоинт:
+  const UPLOAD_URL = '/api/heatmap';
+  // 2) Ключи в localStorage:
+  const LS_KEY = 'htmlLinksHistory';
+
+  // 3) DOM-элементы:
+  const drop = document.getElementById('drop');
+  const fileInput = document.getElementById('fileInput');
+  const pick = document.getElementById('pick');
+  const sendBtn = document.getElementById('send');
+  const list = document.getElementById('list');
+  const prog = document.getElementById('prog');
+  const status = document.getElementById('status');
+  const historyEl = document.getElementById('history');
+  const clearBtn = document.getElementById('clear');
+
+  // 4) Работа с локальным хранилищем:
+  function loadHistory(){
+    try{ return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }catch{ return []; }
+  }
+  function saveHistory(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
+  function addToHistory(link){
+    const arr = loadHistory();
+    if(!arr.includes(link)) arr.unshift(link);
+    saveHistory(arr);
+    renderHistory();
+  }
+  function clearHistory(){ saveHistory([]); renderHistory(); }
+
+  // 5) Рендер списка ссылок справа:
+  function renderHistory(){
+    const arr = loadHistory();
+    historyEl.innerHTML = '';
+    if(arr.length === 0){
+      const li = document.createElement('li');
+      li.textContent = 'Пока пусто';
+      historyEl.append(li);
+      return;
+    }
+    arr.forEach((link, i) => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = link; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = link;
+      li.append(a);
+      historyEl.append(li);
+    });
+  }
+
+  // 6) Рендер списка выбранных файлов:
+  function renderList(files){
+    list.innerHTML = '';
+    [...files].forEach(f => {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      const size = document.createElement('small');
+      name.textContent = f.name;
+      size.textContent = (f.size/1024).toFixed(1) + ' KB';
+      li.append(name, size);
+      list.append(li);
+    });
+  }
+
+  // 7) Назначить файлы инпуту и перерисовать:
+  function setFiles(files){
+    const dt = new DataTransfer();
+    [...files].forEach(f => dt.items.add(f));
+    fileInput.files = dt.files;
+    renderList(fileInput.files);
+  }
+
+  // 8) Сброс выбора после отправки:
+  function resetSelection(){
+    const dt = new DataTransfer();
+    fileInput.files = dt.files;
+    setInterval(()=>{list.innerHTML = ''; status.textContent = '';}, 1000);
+    prog.value = 0; prog.hidden = true;
+  }
+
+  // 9) Отправка файлов через fetch:
+  async function sendFiles(){
+    if(!fileInput.files.length){ alert('Сначала выберите файлы.'); return; }
+    try{
+      status.textContent = 'Загрузка…';
+      prog.hidden = false;
+      let fake = 0; const t = setInterval(()=>{fake=Math.min(99, fake+3); prog.value=fake;}, 120);
+
+      const fd = new FormData();
+      [...fileInput.files].forEach(f => fd.append('files', f, f.name));
+
+      const resp = await fetch(UPLOAD_URL, {method:'POST', body: fd});
+      clearInterval(t); prog.value = 100;
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+
+      const link = await resp.text().catch(()=>({}));
+      console.log('Ответ сервера:', link);
+      // const link = data.html_url || data.link || data.url || data.href;
+      if(!link){
+        status.textContent = 'Загружено, но сервер не прислал ссылку (ожидались html_url/link/url/href).';
+      } else {
+        status.textContent = 'Готово';
+        addToHistory(link);
+      }
+      resetSelection();
+    } catch(err){
+      status.textContent = 'Ошибка: ' + err.message;
+      prog.hidden = true;
+    }
+  }
+
+  // 10) DnD события:
+  ['dragenter','dragover'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); e.dataTransfer.dropEffect='copy'; drop.classList.add('highlight'); })
+  );
+  ['dragleave','drop'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('highlight'); if(ev==='drop'){ setFiles(e.dataTransfer.files); }})
+  );
+
+  // 11) Клики и изменения:
+  // drop.addEventListener('click', () => fileInput.click());
+  pick.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => renderList(fileInput.files));
+  sendBtn.addEventListener('click', sendFiles);
+  clearBtn.addEventListener('click', clearHistory);
+
+  // 12) Инициализация:
+  renderHistory();
+})();
+</script>
+</body>
 </html>
