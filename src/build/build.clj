@@ -15,7 +15,7 @@
   (clean nil)                                               
   (b/copy-dir {:src-dirs ["src/clj" "resources"]                  
                :target-dir class-dir})
-  (b/compile-clj {:basis basis                                 ; AOT-компиляция ns с -main
+  (b/compile-clj {:basis basis             
                   :class-dir class-dir
                   :ns-compile ['jfr.core]})
   (b/uber {:class-dir class-dir                               
