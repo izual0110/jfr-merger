@@ -8,7 +8,7 @@
     :root{--bg:#0b1220;--fg:#e9eef5;--acc:#3b82f6;--mut:#96a0b5}
     *{box-sizing:border-box}
     body{margin:0;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:min(1040px,100%)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:min(1300px,100%)}
     .panel{background:#0f172a;border:1px solid #223;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.3);padding:18px;min-height:360px}
     h1{margin:0 0 8px;font-size:20px}
     p{margin:0 0 12px;color:var(--mut)}
@@ -20,10 +20,13 @@
     ul{list-style:none;padding:0;margin:12px 0 0;max-height:180px;overflow:auto;border-top:1px solid #223}
     li{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed #223}
     small{color:var(--mut)}
-    .history{border:2px dashed #334155;border-radius:14px;padding:12px;min-height:360px}
-    .history ol{margin:8px 0 0;padding-left:18px;max-height:420px;overflow:auto}
     .row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
     progress{width:100%;height:10px}
+    .history{border:2px dashed #334155;border-radius:14px;padding:12px;min-height:360px}
+    .history ol{margin:8px 0 0;padding-left:15px;max-height:420px;overflow:auto}
+    .history li{display:grid;grid-template-columns:10fr 1fr 1fr 1fr;gap:8px;align-items:start}
+    .history li a{word-break:break-word;text-decoration:none}
+    .history li a:hover{text-decoration:underline}
   </style>
 </head>
 <body>
@@ -101,10 +104,17 @@
     }
     arr.forEach(link => {
       const li = document.createElement('li');
-      const a = document.createElement('a');
-      a.href = '/api/heatmap/'+link; a.target = '_blank'; a.rel = 'noopener';
-      a.textContent = link;
-      li.append(a);
+
+      const a0 = document.createElement('a');
+      a0.href = '/api/heatmap/' + link;
+      a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = "all";
+      const a1 = document.createElement('a');
+      a1.href = '/api/heatmap/' + link+"-cpu";
+      a1.target = '_blank'; a1.rel = 'noopener'; a1.textContent = "cpu";
+      const a2 = document.createElement('a');
+      a2.href = '/api/heatmap/' + link+"-alloc";
+      a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = "alloc";
+      li.append(link, a0, a1, a2);
       historyEl.append(li);
     });
   }

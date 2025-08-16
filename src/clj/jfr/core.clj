@@ -1,7 +1,8 @@
-(ns jfr.core 
+(ns jfr.core
   (:import (java.util UUID)
-           (java.nio.file Files Paths)
-           (one.convert JfrToHeatmap Arguments))
+           (one.convert JfrToHeatmap Arguments)
+           (java.io ByteArrayOutputStream)
+           (one.jfr JfrReader))
   (:require [clojure.java.io :as io]
             [jfr.storage :as storage]
             [ring.middleware.multipart-params :refer [wrap-multipart-params]]
@@ -19,25 +20,33 @@
    :headers {"Location" "/index.html"}
    :body    (str (h/html [:a {:href "/index.html"} "index"]))})
 
-(defn convert [in out]
-  (let[args (Arguments. (into-array String ["--output" "heatmap" in out]))]
-   (JfrToHeatmap/convert in out args)))
+(defn convert-to-bytes
+  "Converts JFR input file to heatmap bytes using JfrToHeatmap, returns byte array."
+  [input type]
+  (let [args (Arguments. (into-array String ["--output" "heatmap" type input]))
+        baos (ByteArrayOutputStream.)]
+    (with-open [jfr (JfrReader. input)]
+      (let [converter (JfrToHeatmap. jfr args)]
+        (.convert converter)
+        (.dump converter baos)))
+    (.toByteArray baos)))
 
 (defn generate-heatmap [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
         merged-path (str temp-dir "/" uuid ".jfr")
-        heatmap-path (str temp-dir "/new_" uuid ".html")
-        files (get params "files")
-        files (->> files
+        files (->> (get params "files")
                    (filter #(and (map? %) (contains? % :tempfile))))]
     (io/make-parents merged-path)
     (with-open [out (io/output-stream merged-path)]
       (doseq [file files]
         (with-open [in (io/input-stream (:tempfile file))]
           (io/copy in out))))
-    (convert merged-path heatmap-path)
-    (let [bytes (Files/readAllBytes (Paths/get heatmap-path (make-array String 0)))]
-      (storage/save-bytes uuid bytes)
+    (let [all-bytes (convert-to-bytes merged-path "")
+          cpu-bytes (convert-to-bytes merged-path "--cpu")
+          alloc-bytes (convert-to-bytes merged-path "--alloc")]
+      (storage/save-bytes uuid all-bytes)
+      (storage/save-bytes (str uuid "-cpu") cpu-bytes)
+      (storage/save-bytes (str uuid "-alloc") alloc-bytes)
       {:status 200
        :headers {"Content-Type" "text/plain"}
        :body uuid})))
