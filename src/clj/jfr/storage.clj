@@ -1,7 +1,6 @@
 (ns jfr.storage
   (:import (org.rocksdb RocksDB Options CompressionType))
-  (:require [clojure.java.io :as io]
-            [jfr.environ :as env]))
+  (:require [jfr.environ :as env]))
 
 (RocksDB/loadLibrary)
 

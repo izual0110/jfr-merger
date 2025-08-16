@@ -11,6 +11,5 @@ FIXME: description
 
 ## Usage
 
-FIXME: explanation
-
-    $ java -jar jfr-merger-0.1.0-standalone.jar [args]
+docker build -t jfr-merger .
+docker run -p 8080:8080 jfr-merger
