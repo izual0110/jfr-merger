@@ -1,6 +1,6 @@
 FROM fedora:42 AS builder
 
-RUN dnf install -y java-21-openjdk curl rlwrap && \
+RUN dnf install -y java-24-openjdk curl rlwrap && \
     curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.1.1561/linux-install.sh && \
     chmod +x linux-install.sh && \
     mkdir -p /app/clojure && \
@@ -17,7 +17,7 @@ RUN ls -la /app/target
 
 FROM fedora:42
 
-RUN dnf install -y java-21-openjdk
+RUN dnf install -y java-24-openjdk
 RUN mkdir -p /app/storage
 
 EXPOSE 5000
