@@ -12,9 +12,7 @@ pom.xml.asc
 /.shadow-cljs
 /.cpcache
 /node_modules
-/resources/public/js
-/resources/temp
-/resources/jfrs
+/storage
 
 ### VS Code ###
 .vscode/

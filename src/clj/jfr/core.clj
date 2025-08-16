@@ -8,8 +8,11 @@
            (one.convert JfrToHeatmap Arguments))
   (:require [clojure.java.io :as io]
             [jfr.storage :as storage]
-            [ring.middleware.multipart-params :refer [wrap-multipart-params]])
+            [ring.middleware.multipart-params :refer [wrap-multipart-params]]
+            [jfr.environ :as env])
   (:gen-class))
+
+(def temp-dir (env/temp-dir))
 
 (defn index [_]
   {:status  200
@@ -22,7 +25,6 @@
 
 (defn generate-heatmap [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
-        temp-dir "resources/temp"
         merged-path (str temp-dir "/" uuid ".jfr")
         heatmap-path (str temp-dir "/new_" uuid ".html")
         ;; Собираем все файлы из params (могут быть одиночные или список)

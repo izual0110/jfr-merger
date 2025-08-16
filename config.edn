@@ -1,1 +1,2 @@
-{:get-jfr-data-path "resources/jfrs"}
+{:jfr-data-path "storage/jfrs" 
+ :temp-dir "storage/temp"}
