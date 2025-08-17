@@ -31,12 +31,17 @@
         (.dump converter baos)))
     (.toByteArray baos)))
 
+(defn normalize-vector [v]
+  (if (vector? v) v [v]))
+
 (defn generate-heatmap [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
         merged-path (str temp-dir "/" uuid ".jfr")
         files (->> (get params "files")
+                   normalize-vector
                    (filter #(and (map? %) (contains? % :tempfile))))]
     (io/make-parents merged-path)
+    (println "UUID:" uuid "\n\t\tFiles to merge:" files )
     (with-open [out (io/output-stream merged-path)]
       (doseq [file files]
         (with-open [in (io/input-stream (:tempfile file))]
@@ -84,7 +89,7 @@
   (println "Hello, World!")
   (println "http://localhost:8080/index.html")
   (storage/init)
-  (reset! server (run-server #'app {:port 8080})))
+  (reset! server (run-server #'app {:port 8080 :max-body (* 2 1024 1024 1024)})))
 
 
 ;; (-main)
