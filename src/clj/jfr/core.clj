@@ -89,7 +89,7 @@
   (println "Hello, World!")
   (println "http://localhost:8080/index.html")
   (storage/init)
-  (reset! server (run-server #'app {:port 8080 :max-body (* 2 1024 1024 1024)})))
+  (reset! server (run-server #'app {:port 8080 :max-body (* 1 1024 1024 1024)})))
 
 
 ;; (-main)

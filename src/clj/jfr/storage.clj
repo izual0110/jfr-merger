@@ -1,6 +1,7 @@
 (ns jfr.storage
   (:import (org.rocksdb RocksDB Options CompressionType))
-  (:require [jfr.environ :as env]))
+  (:require [jfr.environ :as env]
+            [clojure.java.io :as io]))
 
 (RocksDB/loadLibrary)
 
@@ -15,6 +16,7 @@
                     (.setEnableBlobFiles true)
                     (.setMinBlobSize (long (* 512 1024)))
                     (.setBlobCompressionType CompressionType/ZSTD_COMPRESSION))]
+      (io/make-parents db-path)
       (reset! db-atom (RocksDB/open options db-path)))))
 
 (defn close-db 

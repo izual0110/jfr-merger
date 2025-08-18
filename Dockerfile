@@ -13,12 +13,10 @@ COPY . /app
 RUN mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.1/jfr-converter.jar
 
 RUN  /app/clojure/bin/clj -T:build uber
-RUN ls -la /app/target
 
 FROM fedora:42
 
 RUN dnf install -y java-24-openjdk
-RUN mkdir -p /app/storage
 
 EXPOSE 5000
 WORKDIR /app
