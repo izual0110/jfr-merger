@@ -1,20 +1,18 @@
 (ns jfr.environ
-  (:require [clojure.edn :as edn]))
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]))
 
 (def config (atom nil))
 
-(defn- check-file [file]
-  (.exists (java.io.File. file)))
-
 (defn- load-config []
-  (let [config-file "config.edn"]
-    (if (check-file config-file)
-       (edn/read-string (slurp config-file))
+  (let [config-file (some #(when (.exists (io/file %)) %) ["resources/config.edn" "./config.edn"])]
+    (if (some? config-file)
+      (edn/read-string (slurp config-file))
       [])))
 
-(defn get-property 
+(defn get-property
   ([key] (when (nil? @config) (reset! config (load-config))) (get @config key))
-  ([key & xs] (when (nil? @config) (reset! config (load-config))) 
+  ([key & xs] (when (nil? @config) (reset! config (load-config)))
    (get-in @config (concat [key] xs))))
 
 (defn get-jfr-data-path [] (.getAbsolutePath (java.io.File. (get-property :jfr-data-path))))
