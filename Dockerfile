@@ -21,6 +21,5 @@ RUN dnf install -y java-24-openjdk
 EXPOSE 5000
 WORKDIR /app
 COPY --from=builder /app/target/app-0.1.0-standalone.jar /app/app-0.1.0-standalone.jar
-COPY config.edn /app/config.edn
 
 CMD ["java", "-jar", "app-0.1.0-standalone.jar"]

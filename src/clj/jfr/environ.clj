@@ -4,10 +4,27 @@
 
 (def config (atom nil))
 
+(defn slurp-safe [x]
+  (try
+    (when x [(slurp x) (str x)])             
+    (catch Exception _ nil)))                    
+
+(defn file-readable?
+  [path]
+  (let [f (io/file path)]         
+    (and (.exists f)                
+         (.isFile f)          
+         (.canRead f))))
+
+
 (defn- load-config []
-  (let [config-file (some #(when (.exists (io/file %)) %) ["resources/config.edn" "./config.edn"])]
-    (if (some? config-file)
-      (edn/read-string (slurp config-file))
+  (let [[config path] (or
+                     (when-let [name "./config.edn"] (file-readable? name) (slurp-safe (io/file name)))
+                     (when-let [name "./resources/config.edn"] (file-readable? name) (slurp-safe (io/file name)))
+                     (when-let [u (io/resource "config.edn")] (slurp-safe u)))]
+    (println "Loading config from" path)
+    (if (some? config)
+      (edn/read-string config)
       [])))
 
 (defn get-property
