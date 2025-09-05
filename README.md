@@ -13,10 +13,12 @@ You can upload multiple JFR files—they will be merged and converted into a
 > 
 > clj -X:uberjar
 
-## Usage
+## Usage and tips
 
 >docker build -t jfr-merger .
 >docker run -p 8080:8080 jfr-merger
+>docker exec -it jfr-merger /bin/bash
+>docker run --rm -it --entrypoint bash jfr-merger
 
 or just
 
