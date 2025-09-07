@@ -86,9 +86,9 @@
     try{ return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }catch{ return []; }
   }
   function saveHistory(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
-  function addToHistory(link){
+  function addToHistory(obj){
     const arr = loadHistory();
-    if(!arr.includes(link)) arr.unshift(link);
+    if(!arr.some(x => x.uuid === obj.uuid)) arr.unshift(obj);
     saveHistory(arr);
     renderHistory();
   }
@@ -102,19 +102,23 @@
       historyEl.append(li);
       return;
     }
-    arr.forEach(link => {
+    arr.forEach(item => {
       const li = document.createElement('li');
+      li.title = JSON.stringify(item.stats, null, 2);
+
+      const uuidSpan = document.createElement('span');
+      uuidSpan.textContent = item.uuid;
 
       const a0 = document.createElement('a');
-      a0.href = '/api/heatmap/' + link;
+      a0.href = '/api/heatmap/' + item.uuid;
       a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = "all";
       const a1 = document.createElement('a');
-      a1.href = '/api/heatmap/' + link+"-cpu";
+      a1.href = '/api/heatmap/' + item.uuid+"-cpu";
       a1.target = '_blank'; a1.rel = 'noopener'; a1.textContent = "cpu";
       const a2 = document.createElement('a');
-      a2.href = '/api/heatmap/' + link+"-alloc";
+      a2.href = '/api/heatmap/' + item.uuid+"-alloc";
       a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = "alloc";
-      li.append(link, a0, a1, a2);
+      li.append(uuidSpan, a0, a1, a2);
       historyEl.append(li);
     });
   }
@@ -180,12 +184,12 @@
       clearInterval(t); prog.value = 100;
       if(!resp.ok) throw new Error('HTTP '+resp.status);
 
-      const link = await resp.text().catch(()=>({}));
-      if(!link){
-        status.textContent = 'Uploaded, but the server did not return a link (expected html_url/link/url/href).';
+      const result = await resp.json().catch(()=>null);
+      if(!result || !result.uuid){
+        status.textContent = 'Uploaded, but the server did not return a valid uuid.';
       } else {
         status.textContent = 'Done';
-        addToHistory(link);
+        addToHistory(result);
       }
 
       // Do not remove current items immediately — only after 10 seconds
