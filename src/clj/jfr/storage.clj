@@ -44,6 +44,29 @@
     (RocksDB/destroyDB db-path options)
     (println "Database" db-path "was deleted")))
 
+(defn stats []
+  (when-let [db @db-atom]
+    (let [props ["rocksdb.estimate-num-keys"
+                 "rocksdb.estimate-live-data-size"
+                 "rocksdb.total-sst-files-size"
+                 "rocksdb.num-files-at-level0"
+                 "rocksdb.size-all-mem-tables"]] 
+           (into {} (map (fn [p] [p (.getProperty db p)]) props)))))
+
+(defn get-all-keys []
+  (when-let [db @db-atom]
+    (let [it (.newIterator db)]
+      (try
+        (.seekToFirst it)
+        (loop [keys []]
+          (if (.isValid it)
+            (let [key (String. (.key it))]
+              (.next it)
+              (recur (conj keys key)))
+            keys))
+        (finally
+          (.close it))))))
+
 (defn init []
   (open-db))
 (defn destroy []

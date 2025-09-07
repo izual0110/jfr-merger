@@ -31,6 +31,12 @@
                               :headers {"Content-Type" "application/json"} 
                               :body (json/write-str {:uuid uuid :stats stats})}))
   (GET "/api/heatmap/:uuid" [uuid] (get-heatmap uuid))
+  (GET "/api/storage/stats" [] {:status 200
+                                :headers {"Content-Type" "application/json"}
+                                :body (json/write-str (storage/stats))})
+  (GET "/api/storage/keys" [] {:status 200
+                                :headers {"Content-Type" "application/json"}
+                                :body (json/write-str (storage/get-all-keys))})
   (resources "/"))
 
 (defonce server (atom nil))
