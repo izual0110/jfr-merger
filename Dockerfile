@@ -1,7 +1,7 @@
 FROM fedora:42 AS builder
 
 RUN dnf install -y java-24-openjdk curl rlwrap && \
-    curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.1.1561/linux-install.sh && \
+    curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.2.1565/linux-install.sh && \
     chmod +x linux-install.sh && \
     mkdir -p /app/clojure && \
     ./linux-install.sh -p /app/clojure && \
