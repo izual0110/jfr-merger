@@ -12,7 +12,7 @@ services:
       - app_storage:/app/storage
     restart: unless-stopped
     environment:
-      - JAVA_OPTS=-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -XX:InitiatingHeapOccupancyPercent=90
+      - JAVA_OPTS=-Xmx1g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -XX:InitiatingHeapOccupancyPercent=90
 
 volumes:
   app_storage:
