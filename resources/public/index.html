@@ -23,7 +23,7 @@
     .row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
     progress{width:100%;height:10px}
     .history{border:2px dashed #334155;border-radius:14px;padding:12px;min-height:360px}
-    .history ol{margin:8px 0 0;padding-left:15px;max-height:420px;overflow:auto}
+    .history ol{margin:8px 0 0;padding-left:0px;max-height:420px;overflow:auto}
     .history li{display:grid;grid-template-columns:10fr 1fr 1fr 1fr;gap:8px;align-items:start}
     .history li a{word-break:break-word;text-decoration:none}
     .history li a:hover{text-decoration:underline}
@@ -60,6 +60,16 @@
         <ol id="history"></ol>
       </div>
     </section>
+  </div>
+
+  <div id="statsModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#181e2a;color:#e9eef5;padding:24px;border-radius:12px;max-width:900px;max-height:80vh;overflow:auto;box-shadow:0 4px 32px #0008;position:relative;">
+      <h3 id="statsTitle" style="margin-top:0;word-break:break-all;overflow-wrap:anywhere;display:flex;align-items:center;justify-content:space-between;font-size:15px;">
+        <span id="statsUuid"></span>
+        <button id="closeStats" style="margin-left:18px;font-size:20px;background:none;border:none;cursor:pointer;z-index:2;color:#e9eef5;line-height:1;padding-right:0px;padding-top:0px;">✖️</button>
+      </h3>
+      <pre id="statsContent" style="white-space:pre-wrap;word-break:break-all;font-size:13px;"></pre>
+    </div>
   </div>
 
 <script>
@@ -104,10 +114,28 @@
     }
     arr.forEach(item => {
       const li = document.createElement('li');
-      li.title = JSON.stringify(item.stats, null, 2);
 
       const uuidSpan = document.createElement('span');
-      uuidSpan.textContent = item.uuid;
+      uuidSpan.title = JSON.stringify(item.stats, null, 2).slice(0, 400) + (JSON.stringify(item.stats, null, 2).length > 400 ? '…' : '');
+      uuidSpan.style.fontSize = '16px';
+      uuidSpan.style.fontWeight = 'bold';
+      uuidSpan.style.display = 'inline-flex';
+      uuidSpan.style.alignItems = 'center';
+      uuidSpan.style.gap = '4px';
+
+      const infoIcon = document.createElement('span');
+      infoIcon.textContent = 'ⓘ';
+      infoIcon.style.color = '#3b82f6';
+      infoIcon.style.fontSize = '20px';
+      infoIcon.style.verticalAlign = 'middle';
+      infoIcon.style.cursor = 'pointer';
+
+      infoIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showStatsModal(item.stats, item.uuid);
+      });
+
+      uuidSpan.append(infoIcon, item.uuid);
 
       const a0 = document.createElement('a');
       a0.href = '/api/heatmap/' + item.uuid;
@@ -219,6 +247,16 @@
   // Initialization
   renderHistory();
 })();
+</script>
+<script>
+function showStatsModal(stats, uuid){
+  document.getElementById('statsModal').style.display = 'flex';
+  document.getElementById('statsUuid').textContent = uuid;
+  document.getElementById('statsContent').textContent = JSON.stringify(stats, null, 2);
+}
+document.getElementById('closeStats').onclick = function(){
+  document.getElementById('statsModal').style.display = 'none';
+};
 </script>
 </body>
 </html>
