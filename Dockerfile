@@ -22,4 +22,4 @@ EXPOSE 5000
 WORKDIR /app
 COPY --from=builder /app/target/app-0.1.0-standalone.jar /app/app-0.1.0-standalone.jar
 
-CMD ["java", "-jar", "app-0.1.0-standalone.jar"]
+CMD ["sh", "-c", "java $JAVA_OPTS -XX:+PrintFlagsFinal -jar app-0.1.0-standalone.jar"]
