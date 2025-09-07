@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>File Upload — async + link history</title>
+  <title>JFR Viewier</title>
   <style>
     :root{--bg:#0b1220;--fg:#e9eef5;--acc:#3b82f6;--mut:#96a0b5}
     *{box-sizing:border-box}
@@ -32,8 +32,8 @@
 <body>
   <div class="grid">
     <section class="panel" aria-label="File upload">
-      <h1>File Upload (async)</h1>
-      <p>Drag and drop files or select manually. Upload via <code>fetch</code>. The server returns a link to the HTML.</p>
+      <h1>File Upload</h1>
+      <p>Drag and drop files or select manually. Upload via <code>fetch</code>.</p>
 
       <input id="fileInput" type="file" name="files" multiple hidden>
 
@@ -50,8 +50,6 @@
     </section>
 
     <section class="panel" aria-label="Link history">
-      <h1>Preview on the right → list of links</h1>
-      <p>Saved in <code>localStorage</code>. Opens in a new tab.</p>
       <div class="history">
         <div class="row" style="justify-content:space-between;margin:0 0 6px 0">
           <strong>History</strong>
