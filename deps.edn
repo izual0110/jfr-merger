@@ -21,6 +21,5 @@
           :paths ["src/build"]
           :ns-default build}
   :test {:extra-paths ["test"]
-         :replace-paths ["test/resources" "resources" "src/clj" "test"]
          :extra-deps {org.clojure/tools.namespace {:mvn/version "1.5.0"}}
          :main-opts ["-m" "test-runner"]}}}

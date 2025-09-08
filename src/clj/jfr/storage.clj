@@ -5,7 +5,7 @@
 
 (RocksDB/loadLibrary)
 
-(def db-path (env/get-jfr-data-path))
+(defn- get-db-path [] (env/get-jfr-data-path))
 (defonce db-atom (atom nil))
 
 (defn open-db 
@@ -15,7 +15,9 @@
                     (.setCreateIfMissing true)
                     (.setEnableBlobFiles true)
                     (.setMinBlobSize (long (* 512 1024)))
-                    (.setBlobCompressionType CompressionType/ZSTD_COMPRESSION))]
+                    (.setBlobCompressionType CompressionType/ZSTD_COMPRESSION))
+          db-path (get-db-path)]
+      (println "Opening RocksDB at" db-path)
       (io/make-parents db-path)
       (reset! db-atom (RocksDB/open options db-path)))))
 
@@ -40,7 +42,8 @@
       (.delete db (.getBytes key)))))
 
 (defn delete-db []
-  (let [options (Options.)]
+  (let [options (Options.)
+        db-path (get-db-path)]
     (RocksDB/destroyDB db-path options)
     (println "Database" db-path "was deleted")))
 

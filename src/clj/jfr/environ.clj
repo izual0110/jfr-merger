@@ -27,7 +27,7 @@
       (edn/read-string config)
       [])))
 
-(defn get-property
+(defn- get-property
   ([key] (when (nil? @config) (reset! config (load-config))) (get @config key))
   ([key & xs] (when (nil? @config) (reset! config (load-config)))
    (get-in @config (concat [key] xs))))

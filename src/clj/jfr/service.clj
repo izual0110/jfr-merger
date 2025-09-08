@@ -8,7 +8,7 @@
             [jfr.utils :as utils]
             [jfr.environ :as env]))
 
-(def temp-dir (env/temp-dir))
+(defn- get-temp-dir [] (env/temp-dir))
 
 (defn convert-to-bytes
   "Converts JFR input file to heatmap bytes using JfrToHeatmap, returns byte array."
@@ -35,6 +35,7 @@
 
 (defn generate-heatmap [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
+        temp-dir (get-temp-dir)
         merged-path (str temp-dir "/" uuid ".jfr")
         files (->> (get params "files")
                    utils/normalize-vector
