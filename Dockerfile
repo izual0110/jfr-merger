@@ -14,7 +14,7 @@ RUN mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-pr
 RUN  /app/clojure/bin/clj -T:build uber
 
 FROM base
-EXPOSE 5000
+EXPOSE 8080
 WORKDIR /app
 COPY --from=builder /app/target/app-0.1.0-standalone.jar /app/app-0.1.0-standalone.jar
 
