@@ -1,5 +1,5 @@
 (ns jfr.service
-   (:import (java.util UUID)
+  (:import (java.util UUID)
            (one.convert JfrToHeatmap Arguments)
            (java.io ByteArrayOutputStream)
            (one.jfr JfrReader))
@@ -46,12 +46,8 @@
       (doseq [file files]
         (with-open [in (io/input-stream (:tempfile file))]
           (io/copy in out))))
-    (let [all-bytes (convert-to-bytes merged-path "")
-          cpu-bytes (convert-to-bytes merged-path "--cpu")
-          alloc-bytes (convert-to-bytes merged-path "--alloc")
-          stats (jfr-stats merged-path)]
-      (storage/save-bytes uuid all-bytes)
-      (storage/save-bytes (str uuid "-cpu") cpu-bytes)
-      (storage/save-bytes (str uuid "-alloc") alloc-bytes)
-      [uuid stats])))
+    (->>  (convert-to-bytes merged-path "") (storage/save-bytes uuid))
+    (->> (convert-to-bytes merged-path "--cpu") (storage/save-bytes (str uuid "-cpu")))
+    (->> (convert-to-bytes merged-path "--alloc") (storage/save-bytes (str uuid "-alloc")))
+    [uuid  (jfr-stats merged-path)]))
 
