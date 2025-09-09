@@ -1,25 +1,29 @@
 (ns jfr.storage
   (:import (org.rocksdb RocksDB Options CompressionType))
-  (:require [jfr.environ :as env]))
+  (:require [jfr.environ :as env]
+            [clojure.java.io :as io]))
 
 (RocksDB/loadLibrary)
 
-(def db-path (env/get-jfr-data-path))
+(defn- get-db-path [] (env/get-jfr-data-path))
 (defonce db-atom (atom nil))
 
-(defn open-db []
+(defn open-db 
   "Opens RocksDB with settings if not already open"
-  (when (nil? @db-atom)
+  [] (when (nil? @db-atom)
     (let [options (doto (Options.)
                     (.setCreateIfMissing true)
                     (.setEnableBlobFiles true)
                     (.setMinBlobSize (long (* 512 1024)))
-                    (.setBlobCompressionType CompressionType/ZSTD_COMPRESSION))]
+                    (.setBlobCompressionType CompressionType/ZSTD_COMPRESSION))
+          db-path (get-db-path)]
+      (println "Opening RocksDB at" db-path)
+      (io/make-parents db-path)
       (reset! db-atom (RocksDB/open options db-path)))))
 
-(defn close-db []
+(defn close-db 
   "Closes the global RocksDB instance"
-  (when-let [db @db-atom]
+  [] (when-let [db @db-atom]
     (.close db)
     (reset! db-atom nil)))
 
@@ -38,9 +42,33 @@
       (.delete db (.getBytes key)))))
 
 (defn delete-db []
-  (let [options (Options.)]
+  (let [options (Options.)
+        db-path (get-db-path)]
     (RocksDB/destroyDB db-path options)
     (println "Database" db-path "was deleted")))
+
+(defn stats []
+  (when-let [db @db-atom]
+    (let [props ["rocksdb.estimate-num-keys"
+                 "rocksdb.estimate-live-data-size"
+                 "rocksdb.total-sst-files-size"
+                 "rocksdb.num-files-at-level0"
+                 "rocksdb.size-all-mem-tables"]] 
+           (into {} (map (fn [p] [p (.getProperty db p)]) props)))))
+
+(defn get-all-keys []
+  (when-let [db @db-atom]
+    (let [it (.newIterator db)]
+      (try
+        (.seekToFirst it)
+        (loop [keys []]
+          (if (.isValid it)
+            (let [key (String. (.key it))]
+              (.next it)
+              (recur (conj keys key)))
+            keys))
+        (finally
+          (.close it))))))
 
 (defn init []
   (open-db))
