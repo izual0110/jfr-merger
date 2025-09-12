@@ -3,9 +3,9 @@
             [jfr.service :as service]))
 
 (deftest convert-to-bytes-missing-file
-  (is (thrown? java.io.FileNotFoundException
+  (is (thrown? java.nio.file.NoSuchFileException
                (service/convert-to-bytes "missing.jfr" ""))))
 
 (deftest jfr-stats-missing-file
-  (is (thrown? java.io.FileNotFoundException
+  (is (thrown? java.nio.file.NoSuchFileException
                (service/jfr-stats "missing.jfr"))))
