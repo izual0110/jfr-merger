@@ -6,6 +6,9 @@
 (deftest if-nil-test
   (is (= 1 (if-nil (fn [] nil) #(+ 1) (fn [] 2)))))
 
+(deftest fail
+  (is (= 0 (+ 12 3 434 4 32 4 324 32 4 324))))
+
 (deftest normalize-vector-test
   (is (= [1 2] (normalize-vector [1 2])))
   (is (= [1] (normalize-vector 1))))
