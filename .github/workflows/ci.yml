@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build test image
+        run: docker build --target builder -t jfr-merger-ci .
+      - name: Run tests
+        run: docker run --rm jfr-merger-ci /app/clojure/bin/clojure -M:test
+
+
