@@ -22,10 +22,10 @@ jobs:
             ${{ runner.os }}-buildx-
       - name: Build test image
         run: |
-          docker build --target builder \
+          docker buildx build --target builder \
             --cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new \
-            -t jfr-merger-ci .
+            --load -t jfr-merger-ci .
       - name: Move cache
         run: |
           rm -rf /tmp/.buildx-cache
