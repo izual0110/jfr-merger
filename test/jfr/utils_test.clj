@@ -5,3 +5,11 @@
 
 (deftest if-nil-test
   (is (= 1 (if-nil (fn [] nil) #(+ 1) (fn [] 2)))))
+
+(deftest normalize-vector-test
+  (is (= [1 2] (normalize-vector [1 2])))
+  (is (= [1] (normalize-vector 1))))
+
+(deftest ns-to-utc-test
+  (is (= "1970-01-01T00:00Z" (ns-to-utc 0)))
+  (is (= "1970-01-01T00:00:01Z" (ns-to-utc 1000000000))))
