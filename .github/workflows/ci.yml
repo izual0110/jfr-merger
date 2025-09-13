@@ -11,14 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       - name: Build test image
-        run: |
-          docker buildx build --target builder \
-            --cache-from=type=gha \
-            --cache-to=type=gha,mode=max \
-            --load -t jfr-merger-ci .
+        run: docker build --target builder -t jfr-merger-ci .
       - name: Run tests
         run: docker run --rm jfr-merger-ci /app/clojure/bin/clojure -M:test
 
