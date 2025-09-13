@@ -37,16 +37,17 @@ should show many steps marked as cached and finish much faster.
 ```bash
 docker buildx build --target builder \
   --cache-from=type=local,src=/tmp/.buildx-cache \
-  --cache-to=type=local,dest=/tmp/.buildx-cache-new \
+  --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
   --load -t jfr-merger-ci .
 
 mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
 docker buildx build --target builder \
   --cache-from=type=local,src=/tmp/.buildx-cache \
-  --cache-to=type=local,dest=/tmp/.buildx-cache-new \
+  --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
   --load -t jfr-merger-ci .
 ```
 
 If the cache is used, the output of the second command will contain
-`CACHED` for most layers.
+`CACHED` for most layers. The `mode=max` option ensures that all
+intermediate layers, including base images, are saved to the cache.
