@@ -21,6 +21,6 @@
           :paths ["src/build"]
           :ns-default build}
   :test {:extra-paths ["test"]
-         :jvm-opts ["-Dclojure.compiler.direct-linking=true" "--enable-native-access=ALL-UNNAMED"]
+         :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
          :extra-deps {org.clojure/tools.namespace {:mvn/version "1.5.0"}}
          :main-opts ["-m" "test-runner"]}}}
