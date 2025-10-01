@@ -61,8 +61,8 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           build-contexts: |
-            m2=dir:/.m2
-            gitlibs=dir:/.gitlibs
+            m2=/.m2
+            gitlibs=/.gitlibs
 
       - name: Check Clojure cache after build
         run: |
