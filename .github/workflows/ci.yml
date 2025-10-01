@@ -44,6 +44,15 @@ jobs:
             -v "$HOME/.m2":/root/.m2 \
             jfr-merger-ci /app/clojure/bin/clojure -M:test
 
+      - name: Check Clojure cache after build
+        run: |
+          if find "$HOME/.m2" -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
+            echo "org/clojure dependency cached"
+          else
+            echo "org/clojure dependency still missing"
+            exit 1
+          fi
+
       - name: Move Docker layer cache
         run: |
           rm -rf /tmp/.buildx-cache
