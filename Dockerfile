@@ -1,4 +1,4 @@
-FROM fedora:42 AS base
+FROM quay.io/fedora/fedora-minimal:42 AS base
 RUN dnf install -y java-25-openjdk curl
 
 FROM base AS builder
