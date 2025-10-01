@@ -3,7 +3,7 @@ RUN dnf install -y java-25-openjdk curl
 
 FROM base AS builder
 RUN dnf install -y rlwrap && \
-    curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.2.1565/linux-install.sh && \
+    curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.3.1577/linux-install.sh && \
     chmod +x linux-install.sh && \
     mkdir -p /app/clojure && \
     ./linux-install.sh -p /app/clojure && \
