@@ -13,9 +13,14 @@ RUN dnf install -y rlwrap && \
 WORKDIR /app
 COPY . /app
 RUN mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.1/jfr-converter.jar
-RUN --mount=type=bind,from=m2,target=/root/.m2,rw \
-    --mount=type=bind,from=gitlibs,target=/root/.gitlibs,rw \
-    /app/clojure/bin/clojure -T:build uber
+RUN --mount=type=cache,id=clojure-m2,target=/root/.m2 \
+    --mount=type=cache,id=clojure-gitlibs,target=/root/.gitlibs \
+    bash -lc 'set -euo pipefail; \
+      /app/clojure/bin/clojure -T:build uber; \
+      rm -rf /app/cache/m2 /app/cache/gitlibs; \
+      mkdir -p /app/cache/m2 /app/cache/gitlibs; \
+      cp -a /root/.m2/. /app/cache/m2/; \
+      cp -a /root/.gitlibs/. /app/cache/gitlibs/'
 
 FROM base
 EXPOSE 8080

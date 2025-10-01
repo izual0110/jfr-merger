@@ -60,9 +60,16 @@ jobs:
           tags: jfr-merger-ci:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-          build-contexts: |
-            m2=/.m2
-            gitlibs=/.gitlibs
+
+      - name: Extract Clojure caches from builder image
+        run: |
+          container_id=$(docker create jfr-merger-ci:latest)
+          sudo rm -rf /.m2 /.gitlibs
+          sudo mkdir -p /.m2 /.gitlibs
+          sudo chown $USER:$USER /.m2 /.gitlibs
+          docker cp "$container_id":/app/cache/m2/. /.m2
+          docker cp "$container_id":/app/cache/gitlibs/. /.gitlibs
+          docker rm "$container_id"
 
       - name: Check Clojure cache after build
         run: |
