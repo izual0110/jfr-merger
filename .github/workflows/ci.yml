@@ -22,16 +22,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - name: Cache Clojure dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.m2
-            ~/.gitlibs
-          key: ${{ runner.os }}-clojure-${{ hashFiles('deps.edn') }}
-          restore-keys: |
-            ${{ runner.os }}-clojure-
-
       - name: Build test image
         uses: docker/build-push-action@v5
         with:
@@ -49,10 +39,6 @@ jobs:
 
       - name: Run tests
         run: |
-          mkdir -p ~/.m2 ~/.gitlibs
-          docker run --rm \
-            -v $HOME/.m2:/root/.m2 \
-            -v $HOME/.gitlibs:/root/.gitlibs \
-            jfr-merger-ci:latest /app/clojure/bin/clojure -M:test
+          docker run --rm jfr-merger-ci:latest /app/clojure/bin/clojure -M:test
 
 
