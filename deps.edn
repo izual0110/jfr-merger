@@ -1,18 +1,18 @@
-{:paths ["src/clj" "resources"]
+{:paths ["src/clj" "resources"] 
 
- :deps {org.clojure/clojure {:mvn/version "1.12.2"}
+ :deps {org.clojure/clojure {:mvn/version "1.12.3"}
         http-kit/http-kit {:mvn/version "2.8.1"}
-        compojure/compojure {:mvn/version "1.7.1"}
+        compojure/compojure {:mvn/version "1.7.2"}
         one/convert {:local/root "lib/jfr-converter.jar"}
         org.rocksdb/rocksdbjni {:mvn/version "10.2.1"}
         hiccup/hiccup {:mvn/version "2.0.0"}
         org.clojure/data.json {:mvn/version "2.5.1"}}
 
  :aliases
- {:uberjar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]
+ {:uberjar {:jvm-opts ["-Dclojure.compiler.direct-linking=true" "--enable-native-access=ALL-UNNAMED"]
             :exec-fn jfr.core/-main
             :exec-args {:compile true}}
-  :repl {:jvm-opts    ["-Xmx8g" "-Xms8g" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints" "-Djdk.attach.allowAttachSelf" "-XX:+EnableDynamicAgentLoading"]
+  :repl {:jvm-opts    ["-Xmx8g" "-Xms8g" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints" "-Djdk.attach.allowAttachSelf" "-XX:+EnableDynamicAgentLoading" "--enable-native-access=ALL-UNNAMED"]
          :extra-deps {cider/cider-nrepl {:mvn/version "0.57.0"}
                       nrepl/nrepl       {:mvn/version "1.4.0"}
                       com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.6.2"}}
@@ -21,5 +21,6 @@
           :paths ["src/build"]
           :ns-default build}
   :test {:extra-paths ["test"]
+         :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
          :extra-deps {org.clojure/tools.namespace {:mvn/version "1.5.0"}}
          :main-opts ["-m" "test-runner"]}}}

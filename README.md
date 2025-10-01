@@ -9,6 +9,8 @@ You can upload multiple JFR files—they will be merged and converted into a
 > cd ...
 > mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.1/jfr-converter.jar
 >
+> mkdir -p lib && curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.1/async-profiler-4.1-linux-x64.tar.gz" | tar -xz -C lib
+>
 > clj -M:repl
 >
 > clj -M:test
@@ -28,3 +30,7 @@ You can upload multiple JFR files—they will be merged and converted into a
 or just
 
 >docker compose up
+
+
+generate profile for bad patterns
+> java -agentpath:$(pwd)/lib/async-profiler-4.1-linux-x64/lib/libasyncProfiler.so=start,event=cpu,file=profile.html  test/BadPatternsDemo.java

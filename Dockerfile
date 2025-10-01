@@ -1,9 +1,9 @@
 FROM fedora:42 AS base
-RUN dnf install -y java-24-openjdk curl
+RUN dnf install -y java-25-openjdk curl
 
 FROM base AS builder
 RUN dnf install -y rlwrap && \
-    curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.2.1565/linux-install.sh && \
+    curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.3.1577/linux-install.sh && \
     chmod +x linux-install.sh && \
     mkdir -p /app/clojure && \
     ./linux-install.sh -p /app/clojure && \
@@ -18,4 +18,4 @@ EXPOSE 8080
 WORKDIR /app
 COPY --from=builder /app/target/app-0.1.0-standalone.jar /app/app-0.1.0-standalone.jar
 
-CMD ["sh", "-c", "java $JAVA_OPTS -XX:+PrintFlagsFinal -jar app-0.1.0-standalone.jar"]
+CMD ["sh", "-c", "java --enable-native-access=ALL-UNNAMED $JAVA_OPTS -XX:+PrintFlagsFinal -jar app-0.1.0-standalone.jar"]
