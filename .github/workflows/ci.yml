@@ -18,9 +18,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+          key: ${{ runner.os }}-buildx
 
       - name: Prepare Clojure cache directories
         run: |
@@ -30,17 +28,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-clojure-m2-${{ hashFiles('deps.edn') }}
-          restore-keys: |
-            ${{ runner.os }}-clojure-m2-
+          key: ${{ runner.os }}-clojure-m2
 
       - name: Cache Clojure gitlibs
         uses: actions/cache@v4
         with:
           path: ~/.gitlibs
-          key: ${{ runner.os }}-clojure-gitlibs-${{ hashFiles('deps.edn') }}
-          restore-keys: |
-            ${{ runner.os }}-clojure-gitlibs-
+          key: ${{ runner.os }}-clojure-gitlibs
 
       - name: Check Clojure cache before build
         run: |
