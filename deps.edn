@@ -4,7 +4,7 @@
         http-kit/http-kit {:mvn/version "2.8.1"}
         compojure/compojure {:mvn/version "1.7.2"}
         one/convert {:local/root "lib/jfr-converter.jar"}
-        org.rocksdb/rocksdbjni {:mvn/version "10.2.1"}
+        org.rocksdb/rocksdbjni {:mvn/version "10.4.2"}
         hiccup/hiccup {:mvn/version "2.0.0"}
         org.clojure/data.json {:mvn/version "2.5.1"}}
 
