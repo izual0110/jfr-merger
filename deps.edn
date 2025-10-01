@@ -5,6 +5,7 @@
         compojure/compojure {:mvn/version "1.7.2"}
         one/convert {:local/root "lib/jfr-converter.jar"}
         org.rocksdb/rocksdbjni$linux64 {:mvn/version "10.4.2"}
+        org.rocksdb/rocksdbjni$osx {:mvn/version "10.4.2"}
         hiccup/hiccup {:mvn/version "2.0.0"}
         org.clojure/data.json {:mvn/version "2.5.1"}}
 
