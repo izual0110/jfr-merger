@@ -22,6 +22,35 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      - name: Prepare Clojure cache directories
+        run: |
+          sudo mkdir -p /.m2 /.gitlibs
+          sudo chown $USER:$USER /.m2 /.gitlibs
+
+      - name: Cache Clojure Maven repository
+        uses: actions/cache@v4
+        with:
+          path: /.m2
+          key: ${{ runner.os }}-clojure-m2-${{ hashFiles('deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-clojure-m2-
+
+      - name: Cache Clojure gitlibs
+        uses: actions/cache@v4
+        with:
+          path: /.gitlibs
+          key: ${{ runner.os }}-clojure-gitlibs-${{ hashFiles('deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-clojure-gitlibs-
+
+      - name: Check Clojure cache before build
+        run: |
+          if sudo find /.m2 -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
+            echo "org/clojure dependency already cached"
+          else
+            echo "org/clojure dependency missing from cache"
+          fi
+
       - name: Build test image
         uses: docker/build-push-action@v5
         with:
@@ -31,6 +60,22 @@ jobs:
           tags: jfr-merger-ci:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          build-contexts: |
+            m2=dir:/.m2
+            gitlibs=dir:/.gitlibs
+
+      - name: Check Clojure cache after build
+        run: |
+          if sudo find /.m2 -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
+            echo "org/clojure dependency cached"
+          else
+            echo "org/clojure dependency still missing"
+            exit 1
+          fi
+
+      - name: Normalize Clojure cache permissions
+        if: always()
+        run: sudo chown -R $USER:$USER /.m2 /.gitlibs
 
       - name: Move Docker layer cache
         run: |
