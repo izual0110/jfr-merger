@@ -24,13 +24,12 @@ jobs:
 
       - name: Prepare Clojure cache directories
         run: |
-          sudo mkdir -p /.m2 /.gitlibs
-          sudo chown $USER:$USER /.m2 /.gitlibs
+          mkdir -p "$HOME/.m2" "$HOME/.gitlibs"
 
       - name: Cache Clojure Maven repository
         uses: actions/cache@v4
         with:
-          path: /.m2
+          path: ~/.m2
           key: ${{ runner.os }}-clojure-m2-${{ hashFiles('deps.edn') }}
           restore-keys: |
             ${{ runner.os }}-clojure-m2-
@@ -38,14 +37,14 @@ jobs:
       - name: Cache Clojure gitlibs
         uses: actions/cache@v4
         with:
-          path: /.gitlibs
+          path: ~/.gitlibs
           key: ${{ runner.os }}-clojure-gitlibs-${{ hashFiles('deps.edn') }}
           restore-keys: |
             ${{ runner.os }}-clojure-gitlibs-
 
       - name: Check Clojure cache before build
         run: |
-          if sudo find /.m2 -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
+          if find "$HOME/.m2" -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
             echo "org/clojure dependency already cached"
           else
             echo "org/clojure dependency missing from cache"
@@ -63,26 +62,22 @@ jobs:
 
       - name: Extract Clojure caches from builder image
         run: |
+          set -euo pipefail
           container_id=$(docker create jfr-merger-ci:latest)
-          sudo rm -rf /.m2 /.gitlibs
-          sudo mkdir -p /.m2 /.gitlibs
-          sudo chown $USER:$USER /.m2 /.gitlibs
-          docker cp "$container_id":/app/cache/m2/. /.m2
-          docker cp "$container_id":/app/cache/gitlibs/. /.gitlibs
+          rm -rf "$HOME/.m2" "$HOME/.gitlibs"
+          mkdir -p "$HOME/.m2" "$HOME/.gitlibs"
+          docker cp "$container_id":/app/cache/m2/. "$HOME/.m2"
+          docker cp "$container_id":/app/cache/gitlibs/. "$HOME/.gitlibs"
           docker rm "$container_id"
 
       - name: Check Clojure cache after build
         run: |
-          if sudo find /.m2 -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
+          if find "$HOME/.m2" -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
             echo "org/clojure dependency cached"
           else
             echo "org/clojure dependency still missing"
             exit 1
           fi
-
-      - name: Normalize Clojure cache permissions
-        if: always()
-        run: sudo chown -R $USER:$USER /.m2 /.gitlibs
 
       - name: Move Docker layer cache
         run: |
