@@ -1,7 +1,7 @@
-FROM fedora:42 AS base
-RUN dnf install -y java-25-openjdk curl
+FROM quay.io/fedora/fedora-minimal:42 AS base
+RUN dnf install -y java-25-openjdk curl tar
 
-FROM base AS builder
+FROM base AS clojure
 RUN dnf install -y rlwrap && \
     curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.3.1577/linux-install.sh && \
     chmod +x linux-install.sh && \
@@ -11,6 +11,10 @@ RUN dnf install -y rlwrap && \
 WORKDIR /app
 COPY . /app
 RUN mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.1/jfr-converter.jar
+
+FROM clojure AS builder
+WORKDIR /app
+COPY . /app
 RUN  /app/clojure/bin/clojure -T:build uber
 
 FROM base
