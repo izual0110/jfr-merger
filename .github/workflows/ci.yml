@@ -18,68 +18,35 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx
+          key: buildx-cache
 
-      - name: Prepare Clojure cache directories
+      - name: Prepare Maven cache directory
         run: |
-          mkdir -p "$HOME/.m2" "$HOME/.gitlibs"
+          mkdir -p "$HOME/.m2"
 
       - name: Cache Clojure Maven repository
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-clojure-m2
+          key: clojure-m2-cache
 
-      - name: Cache Clojure gitlibs
-        uses: actions/cache@v4
-        with:
-          path: ~/.gitlibs
-          key: ${{ runner.os }}-clojure-gitlibs
-
-      - name: Check Clojure cache before build
+      - name: Run tests
+        env:
+          DOCKER_BUILDKIT: "1"
         run: |
-          if find "$HOME/.m2" -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
-            echo "org/clojure dependency already cached"
-          else
-            echo "org/clojure dependency missing from cache"
-          fi
-
-      - name: Build test image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          target: builder
-          load: true
-          tags: jfr-merger-ci:latest
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-      - name: Extract Clojure caches from builder image
-        run: |
-          set -euo pipefail
-          container_id=$(docker create jfr-merger-ci:latest)
-          rm -rf "$HOME/.m2" "$HOME/.gitlibs"
-          mkdir -p "$HOME/.m2" "$HOME/.gitlibs"
-          docker cp "$container_id":/app/cache/m2/. "$HOME/.m2"
-          docker cp "$container_id":/app/cache/gitlibs/. "$HOME/.gitlibs"
-          docker rm "$container_id"
-
-      - name: Check Clojure cache after build
-        run: |
-          if find "$HOME/.m2" -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
-            echo "org/clojure dependency cached"
-          else
-            echo "org/clojure dependency still missing"
-            exit 1
-          fi
+          docker buildx build \
+            --target builder \
+            --load \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            -t jfr-merger-ci .
+          docker run --rm \
+            -v "$HOME/.m2":/root/.m2 \
+            jfr-merger-ci /app/clojure/bin/clojure -M:test
 
       - name: Move Docker layer cache
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-      - name: Run tests
-        run: |
-          docker run --rm jfr-merger-ci:latest /app/clojure/bin/clojure -M:test
 
 
