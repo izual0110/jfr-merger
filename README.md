@@ -107,11 +107,12 @@ docker compose up
 If you need synthetic load, the repository includes [`test/BadPatternsDemo.java`](test/BadPatternsDemo.java):
 
 ```bash
-java -agentpath:$(pwd)/lib/async-profiler-4.1-linux-x64/lib/libasyncProfiler.so=start,event=cpu,file=profile.html \
+java -agentpath:$(pwd)/lib/async-profiler-4.1-linux-x64/lib/libasyncProfiler.so=start,event=cpu,file=profile.jfr \
   test/BadPatternsDemo.java
 ```
 
-Upload `profile.html` through the UI to experiment with the heatmaps.
+Upload `profile.jfr` through the UI to experiment with the heatmaps. To preview a flamegraph locally without the web app, run
+`java -cp lib/jfr-converter.jar jfr.converter.Main profile.jfr profile.html` and open the generated HTML file in a browser.
 
 ---
 
