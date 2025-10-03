@@ -58,8 +58,8 @@ By default, the application writes processed heatmaps to `storage/jfrs` and temp
 # Start a development REPL (includes the HTTP server on port 8080)
 clj -M:repl
 
-# or produce an executable uberjar
-clj -X:uberjar
+# or build and run the executable uberjar
+clj -T:build uber
 java -jar target/app-app-0.1.0-standalone.jar
 ```
 
@@ -104,12 +104,11 @@ docker compose up
 If you need synthetic load, the repository includes [`test/BadPatternsDemo.java`](test/BadPatternsDemo.java):
 
 ```bash
-javac test/BadPatternsDemo.java
-java -agentpath:$(pwd)/lib/async-profiler-4.1-linux-x64/lib/libasyncProfiler.so=start,event=cpu,file=profile.jfr \
-  BadPatternsDemo
+java -agentpath:$(pwd)/lib/async-profiler-4.1-linux-x64/lib/libasyncProfiler.so=start,event=cpu,file=profile.html \
+  test/BadPatternsDemo.java
 ```
 
-Upload `profile.jfr` through the UI to experiment with the heatmaps.
+Upload `profile.html` through the UI to experiment with the heatmaps.
 
 ---
 
