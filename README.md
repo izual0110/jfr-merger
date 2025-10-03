@@ -112,7 +112,7 @@ java -agentpath:$(pwd)/lib/async-profiler-4.1-linux-x64/lib/libasyncProfiler.so=
 ```
 
 Upload `profile.jfr` through the UI to experiment with the heatmaps. To preview a flamegraph locally without the web app, run
-`java -cp lib/jfr-converter.jar jfr.converter.Main profile.jfr profile.html` and open the generated HTML file in a browser.
+`java -jar lib/jfr-converter.jar profile.jfr profile.html` and open the generated HTML file in a browser.
 
 ---
 
