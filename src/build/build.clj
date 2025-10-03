@@ -17,6 +17,7 @@
                :target-dir class-dir})
   (b/compile-clj {:basis basis             
                   :class-dir class-dir
+                  :java-opts ["--enable-native-access=ALL-UNNAMED"]
                   :ns-compile ['jfr.core]})
   (b/uber {:class-dir class-dir                               
            :uber-file uber-file
