@@ -78,6 +78,9 @@ docker run --rm -p 8080:8080 jfr-merger
 
 # For interactive debugging
 docker run --rm -it --entrypoint bash jfr-merger
+
+# Drop into a running container (replace `jfr-merger` with the container name)
+docker exec -it jfr-merger /bin/bash
 ```
 
 To orchestrate alongside other services, use Docker Compose:
