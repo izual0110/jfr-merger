@@ -14,11 +14,11 @@
             :exec-fn jfr.core/-main
             :exec-args {:compile true}}
   :repl {:jvm-opts    ["-Xmx8g" "-Xms8g" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints" "-Djdk.attach.allowAttachSelf" "-XX:+EnableDynamicAgentLoading" "--enable-native-access=ALL-UNNAMED"]
-         :extra-deps {cider/cider-nrepl {:mvn/version "0.57.0"}
-                      nrepl/nrepl       {:mvn/version "1.4.0"}
+         :extra-deps {cider/cider-nrepl {:mvn/version "0.58.0"}
+                      nrepl/nrepl       {:mvn/version "1.5.1"}
                       com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.6.2"}}
          :main-opts  ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]" "-p" "5000" "-b" "0.0.0.0"]}
-  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.10"}}
+  :build {:extra-deps {io.github.clojure/tools.build {:mvn/version "0.10.11"}}
           :paths ["src/build"]
           :ns-default build}
   :test {:extra-paths ["test"]
