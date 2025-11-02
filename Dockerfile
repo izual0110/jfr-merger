@@ -10,7 +10,7 @@ RUN dnf install -y rlwrap && \
     rm linux-install.sh
 WORKDIR /app
 COPY . /app
-RUN mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.1/jfr-converter.jar
+RUN mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.2/jfr-converter.jar
 
 FROM clojure AS builder
 WORKDIR /app
