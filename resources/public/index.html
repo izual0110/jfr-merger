@@ -28,6 +28,8 @@
     .history li{display:grid;grid-template-columns:10fr 1fr 1fr 1fr;gap:8px;align-items:start}
     .history li a{word-break:break-word;text-decoration:none}
     .history li a:hover{text-decoration:underline}
+    .history-name{cursor:text;min-width:0;display:inline-flex;align-items:center;gap:6px}
+    .history-name[contenteditable="true"]{outline:1px solid var(--acc);border-radius:4px;padding:0 4px}
   </style>
 </head>
 <body>
@@ -92,16 +94,90 @@
 
   // === Link history on the right ===
   function loadHistory(){
-    try{ return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }catch{ return []; }
+    try{
+      const raw = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+      if(!Array.isArray(raw)) return [];
+      return raw.map(item => {
+        if(!item || typeof item !== 'object' || !item.uuid) return null;
+        return {
+          ...item,
+          name: typeof item.name === 'string' ? item.name : ''
+        };
+      }).filter(Boolean);
+    }catch{
+      return [];
+    }
   }
   function saveHistory(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
   function addToHistory(obj){
+    if(!obj || !obj.uuid) return;
     const arr = loadHistory();
-    if(!arr.some(x => x.uuid === obj.uuid)) arr.unshift(obj);
+    const idx = arr.findIndex(x => x.uuid === obj.uuid);
+    if(idx !== -1){
+      const existing = arr[idx];
+      const updated = {
+        ...existing,
+        ...obj,
+        name: existing.name || ''
+      };
+      arr.splice(idx, 1);
+      arr.unshift(updated);
+    } else {
+      const entry = {
+        ...obj,
+        name: typeof obj.name === 'string' ? obj.name : ''
+      };
+      arr.unshift(entry);
+    }
     saveHistory(arr);
     renderHistory();
   }
   function clearHistory(){ saveHistory([]); renderHistory(); }
+  function persistHistoryName(uuid, newName){
+    const arr = loadHistory();
+    const idx = arr.findIndex(item => item.uuid === uuid);
+    if(idx === -1) return;
+    arr[idx].name = newName;
+    saveHistory(arr);
+    renderHistory();
+  }
+  function placeCaretAtEnd(el){
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  function beginNameEdit(span){
+    if(span.dataset.editing === '1') return;
+    span.dataset.editing = '1';
+    span.dataset.originalName = span.textContent;
+    span.setAttribute('contenteditable', 'true');
+    span.focus();
+    placeCaretAtEnd(span);
+  }
+  function finishNameEdit(uuid, span, shouldSave, options = {}){
+    if(span.dataset.editing !== '1') return;
+    const { triggerBlur = false } = options;
+    const original = span.dataset.originalName || '';
+    const rawText = span.textContent.replace(/\s+/g, ' ').trim();
+    span.dataset.editing = '';
+    span.removeAttribute('contenteditable');
+    delete span.dataset.originalName;
+    if(!shouldSave){
+      span.textContent = original;
+      if(triggerBlur) span.blur();
+      return;
+    }
+    const displayValue = rawText || uuid;
+    const storedValue = displayValue === uuid ? '' : displayValue;
+    span.textContent = displayValue;
+    if(triggerBlur) span.blur();
+    if(displayValue !== original){
+      persistHistoryName(uuid, storedValue);
+    }
+  }
   function renderHistory(){
     const arr = loadHistory();
     historyEl.innerHTML = '';
@@ -115,7 +191,8 @@
       const li = document.createElement('li');
 
       const uuidSpan = document.createElement('span');
-      uuidSpan.title = JSON.stringify(item.stats, null, 2).slice(0, 400) + (JSON.stringify(item.stats, null, 2).length > 400 ? '…' : '');
+      const statsString = JSON.stringify(item.stats, null, 2) || '';
+      uuidSpan.title = statsString.slice(0, 400) + (statsString.length > 400 ? '…' : '');
       uuidSpan.style.fontSize = '16px';
       uuidSpan.style.fontWeight = 'bold';
       uuidSpan.style.display = 'inline-flex';
@@ -134,7 +211,34 @@
         showStatsModal(item.stats, item.uuid);
       });
 
-      uuidSpan.append(infoIcon, item.uuid);
+      const nameSpan = document.createElement('span');
+      const displayName = (item.name && item.name.trim()) ? item.name.trim() : item.uuid;
+      nameSpan.textContent = displayName;
+      nameSpan.className = 'history-name';
+      nameSpan.dataset.uuid = item.uuid;
+      nameSpan.spellcheck = false;
+      nameSpan.tabIndex = 0;
+      nameSpan.title = item.uuid;
+
+      nameSpan.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        beginNameEdit(nameSpan);
+      });
+      nameSpan.addEventListener('keydown', (e) => {
+        if(nameSpan.dataset.editing !== '1') return;
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          finishNameEdit(item.uuid, nameSpan, true, {triggerBlur: true});
+        } else if(e.key === 'Escape'){
+          e.preventDefault();
+          finishNameEdit(item.uuid, nameSpan, false, {triggerBlur: true});
+        }
+      });
+      nameSpan.addEventListener('blur', () => {
+        finishNameEdit(item.uuid, nameSpan, true);
+      });
+
+      uuidSpan.append(infoIcon, nameSpan);
 
       const a0 = document.createElement('a');
       a0.href = '/api/heatmap/' + item.uuid;
