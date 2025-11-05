@@ -218,7 +218,7 @@
       nameSpan.dataset.uuid = item.uuid;
       nameSpan.spellcheck = false;
       nameSpan.tabIndex = 0;
-      nameSpan.title = item.uuid;
+      nameSpan.title = statsString.slice(0, 400) + (statsString.length > 400 ? '…' : '');
 
       nameSpan.addEventListener('dblclick', (e) => {
         e.stopPropagation();
