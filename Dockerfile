@@ -1,5 +1,5 @@
 FROM quay.io/fedora/fedora-minimal:43 AS base
-RUN dnf install -y java-25-openjdk curl tar
+RUN dnf install -y java-25-openjdk curl tar && dnf clean all && rm -rf /var/cache/yum
 
 FROM base AS clojure
 RUN dnf install -y rlwrap && \
@@ -7,7 +7,10 @@ RUN dnf install -y rlwrap && \
     chmod +x linux-install.sh && \
     mkdir -p /app/clojure && \
     ./linux-install.sh -p /app/clojure && \
-    rm linux-install.sh
+    rm linux-install.sh && \
+    dnf clean all && \
+    rm -rf /var/cache/yum
+    
 WORKDIR /app
 COPY . /app
 RUN mkdir -p lib && curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.2/jfr-converter.jar
