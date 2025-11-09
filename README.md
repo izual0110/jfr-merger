@@ -29,7 +29,7 @@
 
 ```bash
 cd /path/to/workspace
-git clone https://github.com/<you>/jfr-merger.git
+git clone https://github.com/izual0110/jfr-merger.git
 cd jfr-merger
 
 # Download the async-profiler converter jars used during heatmap generation
