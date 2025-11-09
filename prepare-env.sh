@@ -39,12 +39,7 @@ fi
 
 chmod +x "${CLOJURE_INSTALLER}"
 
-if command -v sudo >/dev/null 2>&1; then
-  echo "Running Clojure installer with sudo"
-  sudo "./${CLOJURE_INSTALLER}"
-else
-  echo "sudo not found; running Clojure installer directly"
-  "./${CLOJURE_INSTALLER}"
-fi
+echo "Running Clojure installer"
+"./${CLOJURE_INSTALLER}"
 
 echo "Environment preparation complete"
