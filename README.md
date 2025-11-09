@@ -29,13 +29,13 @@
 
 ```bash
 cd /path/to/workspace
-git clone https://github.com/<you>/jfr-merger.git
+git clone https://github.com/izual0110/jfr-merger.git
 cd jfr-merger
 
 # Download the async-profiler converter jars used during heatmap generation
 mkdir -p lib
-curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.1/jfr-converter.jar
-curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.1/async-profiler-4.1-linux-x64.tar.gz" | tar -xz -C lib
+curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.2/jfr-converter.jar
+curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.2/async-profiler-4.2-linux-x64.tar.gz" | tar -xz -C lib
 ```
 
 ### 2. Configure storage paths (optional)
