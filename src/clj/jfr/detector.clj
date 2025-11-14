@@ -12,15 +12,6 @@
 (defn- jfr-events ^java.util.List [^String jfr-path]
   (RecordingFile/readAllEvents (Paths/get jfr-path (make-array String 0))))
 
-(defn- frame->fq-method ^String [^RecordedFrame f]
-  (let [m (.getMethod f)
-        _ (if (.contains (.getName m) "values") (println 
-                                                 "new:" (.toString (.getDescriptor m))
-                                                 "\n\nresult:" (str (.getName (.getType m)) "." (.getName m))) nil)]
-    (str (.getName (.getType m)) "." (.getName m))))
-
-;(test-detect)
-
 (defn- jvm-descriptor->pretty [^String desc]
   ;; очень упрощённый парсер JVM дескрипторов для читаемости
   ;; (D)V  → "(double)"
@@ -65,11 +56,7 @@
         type-name (.getName (.getType m))
         method-name (.getName m)
         descriptor (.getDescriptor m)] ;; дескриптор в jvm-формате "(D)V"
-    ;; Преобразуем "(D)V" в что-то более читаемое
-    ;; (if (.contains method-name "values") (println (str type-name "." method-name (jvm-descriptor->pretty descriptor))))
-    (str type-name "." method-name (jvm-descriptor->pretty descriptor))))                                                          
-
-;(test-detect)
+    (str type-name "." method-name (jvm-descriptor->pretty descriptor))))
 
 (defn- event->frames ^java.util.List [^RecordedEvent e]
   (let [^RecordedStackTrace st (.getStackTrace e)]
@@ -133,21 +120,21 @@
    {:id :boxing
     :title "5) Autoboxing on hot path"
     :where :stack
-    :match [#"^java\.lang\.(Integer|Long|Double)\.valueOf$"]
+    :match [#"^java\.lang\.(Integer|Long|Double)\.valueOf\(int\)$"]
     :advice "Использовать примитивы/IntStream/fastutil/trove, избегать бокса в цикле."}
 
    ;; Random в каждом методе
    {:id :random-new
     :title "6) new Random() frequently"
     :where :stack
-    :match [#"^java\.util\.Random\.<init>$"]
+    :match [#"^java\.util\.Random\.<init>\(.*\)$"]
     :advice "Использовать ThreadLocalRandom.current() / SplittableRandom."}
 
    ;; Optional.of(...) в tight loop
    {:id :optional
     :title "7) Optional allocations in hot path"
     :where :stack
-    :match [#"^java\.util\.Optional\.of(Nullable)?$"]
+    :match [#"^java\.util\.Optional\.of\(java\.lang\.Object\)?$"]
     :advice "Избавиться от лишних Optional в цикле; простое условие быстрее."}
 
    ;; Stream/forEach на коротких коллекциях
@@ -161,14 +148,14 @@
    {:id :keyset-contains
     :title "9) keySet().contains instead of containsKey"
     :where :stack
-    :match [#"\.keySet$" #"\.contains$"]
+    :match [#"\.keySet$" #"\.contains\(java\.lang\.Object\)$"]
     :advice "Использовать Map.containsKey(x)."}
 
    ;; System.currentTimeMillis в цикле
    {:id :currentTime
     :title "10) System.currentTimeMillis in loop"
     :where :stack
-    :match [#"^java\.lang\.System\.currentTimeMillis$"]
+    :match [#"^java\.lang\.System\.currentTimeMillis\(\)$"]
     :advice "Вынести в переменную вне цикла."}
 
    ;; BigDecimal(double)
@@ -182,13 +169,17 @@
    {:id :tochar
     :title "12) String.toCharArray in hot path"
     :where :stack
-    :match [#"^java\.lang\.String\.toCharArray$"]
+    :match [#"^java\.lang\.String\.toCharArray\(\)$"]
     :advice "Использовать charAt/regionMatches вместо аллокации массива."}
    ])
 
 ;(test-detect)
 
-(re-find #"^java\.lang\.String\.format\(java\.lang\.String,java\.lang\.Object\[\]\)$" "java.lang.String.format(java.lang.String,java.lang.Object[])")
+;4 11 3 2 8 1 5 6 7 9 10
+;10 9 7 6 5 12 1 8 2 3 11 4
+
+;; (re-find #"^java\.lang\.String\.format\(java\.lang\.String,java\.lang\.Object\[\]\)$" "java.lang.String.format(java.lang.String,java.lang.Object[])")
+;; (re-find #"^java\.lang\.(Integer|Long|Double)\.valueOf\(int\)$" "java.lang.Integer.valueOf(int)")
 
 ;; ----------------------------
 ;; 2) Поиск совпадений по стеку/типу
@@ -212,7 +203,7 @@
             ;;   _ (println "RecordedEvent" (event-name e))
               ;;   _ (println "RecordedEvent" e)
               frames (vec (stack->strings e))
-            ;;   _ (println frames)
+              ;; _ (println frames)
               obj    (object-class e)
               sz     (alloc-size e)]
         p patterns
@@ -311,12 +302,3 @@
 ;;                  :match [#"\[Lcom\.acme\.MyEnum;"]
 ;;                  :advice "Кэшируй MyEnum.values()"}))
 ;;   (detect-patterns {:jfr-path "x.jfr" :patterns my})
-
-
-(def my-map {:a "A" :b "B" :c 3 :d 4})
-(let [{a :a, x :x, :or {x "Not found!"}, :as all} my-map]
-  (println "I got" a "from" all)
-  (println "Where is x?" x))
-
-
- 
