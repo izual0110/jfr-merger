@@ -1,4 +1,4 @@
-(ns jfr.repl
+(ns repl
   (:require
    [jfr.core :as core]
    [jfr.detector.detector :as detector]))
