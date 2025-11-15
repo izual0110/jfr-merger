@@ -18,6 +18,7 @@ RUN  /app/clojure/bin/clojure -T:build uber
 
 FROM base
 EXPOSE 8080
+WORKDIR /app
 COPY --from=builder /app/target/jfr-merger-0.1.1.jar /app/jfr-merger-0.1.1.jar
 
 CMD ["sh", "-c", "java --enable-native-access=ALL-UNNAMED $JAVA_OPTS -XX:+PrintFlagsFinal -jar jfr-merger-0.1.1.jar"]
