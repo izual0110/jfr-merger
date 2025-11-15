@@ -51,7 +51,7 @@ jobs:
             -t jfr-merger-ci .
           docker run --rm \
             -v ~/.m2:/root/.m2 \
-            -v ~/runner/work/jfr-merger/jfr-merger:/tmp/incoming \
+            -v ~/jfr-merger:/tmp/incoming \
             jfr-merger-ci \
             /bin/bash -c "cp /tmp/incoming/* /app/ && /app/clojure/bin/clojure -M:test"
 
