@@ -47,7 +47,7 @@ jobs:
             --target clojure \
             --load \
             --cache-from type=local,src=/tmp/.buildx-cache \
-            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --cache-to type=local,dest=/tmp/.buildx-cache,mode=max \
             -t jfr-merger-ci .
           docker run --rm \
             -v $HOME/.m2:/root/.m2 \
@@ -64,9 +64,9 @@ jobs:
             exit 1
           fi
 
-      - name: Move Docker layer cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+#      - name: Move Docker layer cache
+#        run: |
+#          rm -rf /tmp/.buildx-cache
+#          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
 
