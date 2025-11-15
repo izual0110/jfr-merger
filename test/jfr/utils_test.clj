@@ -1,10 +1,19 @@
 (ns jfr.utils-test
   (:require [clojure.test :refer :all]
-            [jfr.core :refer :all]
             [jfr.utils :refer :all]))
 
 (deftest if-nil-test
-  (is (= 1 (if-nil (fn [] nil) #(+ 1) (fn [] 2)))))
+  (is (= 1 (if-nil (constantly nil)
+                   (constantly 1)
+                   (constantly 2))))
+  (is (= :value (if-nil (constantly :value))))
+  (is (nil? (if-nil (constantly nil))))
+  (is (false? (if-nil (constantly nil) (constantly false))))
+  (let [calls (atom 0)]
+    (is (= :ok (if-nil (constantly nil)
+                         (fn [] (swap! calls inc) :ok)
+                         (fn [] (swap! calls dec) :should-not-run))))
+    (is (= 1 @calls))))
 
 (deftest normalize-vector-test
   (is (= [1 2] (normalize-vector [1 2])))

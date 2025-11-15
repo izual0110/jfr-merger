@@ -2,7 +2,7 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]))
 
-(def config (atom nil))
+(defonce ^:private config (atom nil))
 
 (defn slurp-safe [x]
   (try
@@ -18,19 +18,28 @@
 
 
 (defn- load-config []
-  (let [[config path] (or
-                     (when-let [name "./config.edn"] (file-readable? name) (slurp-safe (io/file name)))
-                     (when-let [name "./resources/config.edn"] (file-readable? name) (slurp-safe (io/file name)))
-                     (when-let [u (io/resource "config.edn")] (slurp-safe u)))]
-    (println "Loading config from" path)
-    (if (some? config)
-      (edn/read-string config)
-      [])))
+  (let [candidates (concat (for [path ["./config.edn" "./resources/config.edn"]
+                                 :when (file-readable? path)]
+                             (io/file path))
+                           [(io/resource "config.edn")])
+        [raw path] (some slurp-safe candidates)]
+    (when path
+      (println "Loading config from" path))
+    (if raw
+      (edn/read-string raw)
+      {})))
+
+(defn- ensure-config []
+  (or @config (reset! config (load-config))))
 
 (defn- get-property
-  ([key] (when (nil? @config) (reset! config (load-config))) (get @config key))
-  ([key & xs] (when (nil? @config) (reset! config (load-config)))
-   (get-in @config (concat [key] xs))))
+  ([key]
+   (get (ensure-config) key))
+  ([key & xs]
+   (let [config-map (ensure-config)]
+     (if (seq xs)
+       (get-in config-map (into [key] xs))
+       (get config-map key)))))
 
 (defn get-jfr-data-path [] (.getAbsolutePath (java.io.File. (get-property :jfr-data-path))))
 (defn temp-dir [] (get-property :temp-dir))
