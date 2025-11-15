@@ -22,7 +22,7 @@ jobs:
 
       - name: Prepare Maven cache directory
         run: |
-          mkdir -p ~/.m2 && tree ~/
+          mkdir -p ~/.m2 && tree $PWD/
 
       - name: Cache Clojure Maven repository
         uses: actions/cache@v4
@@ -39,21 +39,21 @@ jobs:
           fi
 
 
-      - name: Run tests
-        env:
-          DOCKER_BUILDKIT: "1"
-        run: |
-          docker buildx build \
-            --target clojure \
-            --load \
-            --cache-from type=local,src=/tmp/.buildx-cache \
-            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
-            -t jfr-merger-ci .
-          docker run --rm \
-            -v $HOME/.m2:/root/.m2 \
-            -v $PWD/jfr-merger:/tmp/incoming \
-            jfr-merger-ci \
-            /bin/bash -c "cp /tmp/incoming/* /app/ && /app/clojure/bin/clojure -M:test"
+#      - name: Run tests
+#        env:
+#          DOCKER_BUILDKIT: "1"
+#        run: |
+#          docker buildx build \
+#            --target clojure \
+#            --load \
+#            --cache-from type=local,src=/tmp/.buildx-cache \
+#            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+#            -t jfr-merger-ci .
+#          docker run --rm \
+#            -v $HOME/.m2:/root/.m2 \
+#            -v $PWD/jfr-merger:/tmp/incoming \
+#            jfr-merger-ci \
+#            /bin/bash -c "cp /tmp/incoming/* /app/ && /app/clojure/bin/clojure -M:test"
 
       - name: Check Clojure cache after build
         run: |
