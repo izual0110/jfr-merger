@@ -1,5 +1,5 @@
 FROM quay.io/fedora/fedora-minimal:43 AS base
-RUN dnf install -y java-25-openjdk-headless && dnf clean all && rm -rf /var/cache/yum
+RUN dnf install -y java-25-openjdk-headless tar && dnf clean all && rm -rf /var/cache/yum
 
 FROM base AS clojure
 RUN dnf install -y rlwrap && \
