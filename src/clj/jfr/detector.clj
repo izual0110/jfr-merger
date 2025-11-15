@@ -1,19 +1,19 @@
 (ns jfr.detector
   (:require [clojure.string :as str])
   (:import
-   ;; JDK Flight Recorder API (доступно с JDK 11+)
+   ;; JDK Flight Recorder API (available since JDK 11+)
    [jdk.jfr.consumer RecordingFile RecordedEvent RecordedFrame RecordedStackTrace]
    [java.nio.file Paths]))
 
 ;; ----------------------------
-;; 0) Вспомогательные штуки
+;; 0) Helper utilities
 ;; ----------------------------
 
 (defn- jfr-events ^java.util.List [^String jfr-path]
   (RecordingFile/readAllEvents (Paths/get jfr-path (make-array String 0))))
 
 (defn- jvm-descriptor->pretty [^String desc]
-  ;; очень упрощённый парсер JVM дескрипторов для читаемости
+  ;; A very small JVM descriptor parser for readability
   ;; (D)V  → "(double)"
   ;; (Ljava/lang/String;)V → "(java.lang.String)"
   ;; (I)Ljava/lang/String; → "(int):java.lang.String"
@@ -29,10 +29,10 @@
     (letfn [(parse-type [^String s]
               (cond
                 (empty? s) ["" ""]
-                (= (subs s 0 1) "[") ;; массив
+                (= (subs s 0 1) "[") ;; array
                 (let [[t rest] (parse-type (subs s 1))]
                   [(str t "[]") rest])
-                (= (subs s 0 1) "L") ;; объект
+                (= (subs s 0 1) "L") ;; object
                 (let [semi (.indexOf s ";")
                       fqcn (subs s 1 semi)]
                   [(.replace fqcn "/" ".") (subs s (inc semi))])
@@ -42,7 +42,7 @@
             args-end (.indexOf desc ")")
             args-str (subs desc (inc args-start) args-end)
             ret-str (subs desc (inc args-end))
-            ;; распарсим аргументы
+            ;; parse arguments
             parse-args (fn parse-args [s acc]
                          (if (empty? s)
                            acc
@@ -55,7 +55,7 @@
   (let [m (.getMethod f)
         type-name (.getName (.getType m))
         method-name (.getName m)
-        descriptor (.getDescriptor m)] ;; дескриптор в jvm-формате "(D)V"
+        descriptor (.getDescriptor m)] ;; descriptor in JVM format "(D)V"
     (str type-name "." method-name (jvm-descriptor->pretty descriptor))))
 
 (defn- event->frames ^java.util.List [^RecordedEvent e]
@@ -83,94 +83,94 @@
   (map frame->fq-method (event->frames e)))
 
 ;; ----------------------------
-;; 1) Паттерны «быстрых фиксов»
-;;    — можно дополнять под себя
+;; 1) Quick-fix patterns
+;;    — extend as needed
 ;; ----------------------------
 
 (def default-patterns
-  [;; enum.values() -> Enum.clone(): аллокация массива enum при каждом вызове
-   {:id :enum-values
-    :title "1) Enum.values clone array"
-    :where :stack
-    :match [#"\.values\(\)$"]
-    :advice "Вынеси MyEnum.values() из tight-loop в локальную/кэш, либо static final T[] CACHE."}
+  [;; enum.values() -> Enum.clone(): enum array allocation on each call
+    {:id :enum-values
+     :title "1) Enum.values clone array"
+     :where :stack
+     :match [#"\.values\(\)$"]
+    :advice "Move MyEnum.values() out of tight loops into a local cache, or use static final T[] CACHE."}
 
-   ;; String.split(regex) в цикле: компиляция Pattern + массив
-   {:id :string-split
-    :title "2) String.split(regex) in hot path"
-    :where :stack
-    :match [#"^java\.lang\.String\.split\(java\.lang\.String\)$"]
-    :advice "Переход на indexOf/substrings или кэшируй Pattern в static final."}
+   ;; String.split(regex) inside a loop: Pattern compilation + array allocation
+    {:id :string-split
+     :title "2) String.split(regex) in hot path"
+     :where :stack
+     :match [#"^java\.lang\.String\.split\(java\.lang\.String\)$"]
+    :advice "Switch to indexOf/substrings or cache the Pattern in a static final field."}
 
-   ;; String.format: тяжёлый Formatter + куча временных
-   {:id :string-format
-    :title "3) String.format in hot path"
-    :where :stack
-    :match [#"^java\.lang\.String\.format\(java\.lang\.String,java\.lang\.Object\[\]\)$" #"^java\.util\.Formatter\."]
-    :advice "Заменить на конкатенацию или StringBuilder."}
+   ;; String.format: heavyweight Formatter + plenty of temporaries
+    {:id :string-format
+     :title "3) String.format in hot path"
+     :where :stack
+     :match [#"^java\.lang\.String\.format\(java\.lang\.String,java\.lang\.Object\[\]\)$" #"^java\.util\.Formatter\."]
+    :advice "Replace with concatenation or StringBuilder."}
 
-   ;; SimpleDateFormat создаётся/используется часто
-   {:id :sdf-new
-    :title "4) new SimpleDateFormat repeatedly"
-    :where :stack
-    :match [#"^java\.text\.SimpleDateFormat\.<init>\(java\.lang\.String\)$"]
-    :advice "Перейти на иммутабельный java.time.DateTimeFormatter (thread-safe)."}
+   ;; SimpleDateFormat created/used frequently
+    {:id :sdf-new
+     :title "4) new SimpleDateFormat repeatedly"
+     :where :stack
+     :match [#"^java\.text\.SimpleDateFormat\.<init>\(java\.lang\.String\)$"]
+    :advice "Switch to immutable java.time.DateTimeFormatter (thread-safe)."}
 
-   ;; Автобоксинг в коллекциях/стримах
-   {:id :boxing
-    :title "5) Autoboxing on hot path"
-    :where :stack
-    :match [#"^java\.lang\.(Integer|Long|Double)\.valueOf\(int\)$"]
-    :advice "Использовать примитивы/IntStream/fastutil/trove, избегать бокса в цикле."}
+   ;; Autoboxing in collections/streams
+    {:id :boxing
+     :title "5) Autoboxing on hot path"
+     :where :stack
+     :match [#"^java\.lang\.(Integer|Long|Double)\.valueOf\(int\)$"]
+    :advice "Prefer primitives/IntStream/fastutil/trove and avoid boxing inside loops."}
 
-   ;; Random в каждом методе
-   {:id :random-new
-    :title "6) new Random() frequently"
-    :where :stack
-    :match [#"^java\.util\.Random\.<init>\(.*\)$"]
-    :advice "Использовать ThreadLocalRandom.current() / SplittableRandom."}
+   ;; Random created in each method
+    {:id :random-new
+     :title "6) new Random() frequently"
+     :where :stack
+     :match [#"^java\.util\.Random\.<init>\(.*\)$"]
+    :advice "Use ThreadLocalRandom.current() / SplittableRandom instead."}
 
-   ;; Optional.of(...) в tight loop
-   {:id :optional
-    :title "7) Optional allocations in hot path"
-    :where :stack
-    :match [#"^java\.util\.Optional\.of\(java\.lang\.Object\)?$"]
-    :advice "Избавиться от лишних Optional в цикле; простое условие быстрее."}
+   ;; Optional.of(...) in a tight loop
+    {:id :optional
+     :title "7) Optional allocations in hot path"
+     :where :stack
+     :match [#"^java\.util\.Optional\.of\(java\.lang\.Object\)?$"]
+    :advice "Remove unnecessary Optional allocations in loops; a simple condition is faster."}
 
-   ;; Stream/forEach на коротких коллекциях
-   {:id :streams
-    :title "8) Stream pipeline in tight loop"
-    :where :stack
-    :match [#"^java\.util\.stream\."]
-    :advice "Обычный for быстрее и без лишних аллокаций."}
+   ;; Stream/forEach on short collections
+    {:id :streams
+     :title "8) Stream pipeline in tight loop"
+     :where :stack
+     :match [#"^java\.util\.stream\."]
+    :advice "A plain for-loop is faster and avoids extra allocations."}
 
    ;; map.keySet().contains(x)
-   {:id :keyset-contains
-    :title "9) keySet().contains instead of containsKey"
-    :where :stack
-    :match [#"\.keySet$" #"\.contains\(java\.lang\.Object\)$"]
-    :advice "Использовать Map.containsKey(x)."}
+    {:id :keyset-contains
+     :title "9) keySet().contains instead of containsKey"
+     :where :stack
+     :match [#"\.keySet$" #"\.contains\(java\.lang\.Object\)$"]
+    :advice "Call Map.containsKey(x) instead."}
 
-   ;; System.currentTimeMillis в цикле
-   {:id :currentTime
-    :title "10) System.currentTimeMillis in loop"
-    :where :stack
-    :match [#"^java\.lang\.System\.currentTimeMillis\(\)$"]
-    :advice "Вынести в переменную вне цикла."}
+   ;; System.currentTimeMillis inside a loop
+    {:id :currentTime
+     :title "10) System.currentTimeMillis in loop"
+     :where :stack
+     :match [#"^java\.lang\.System\.currentTimeMillis\(\)$"]
+    :advice "Store the value in a variable outside the loop."}
 
    ;; BigDecimal(double)
-   {:id :bigdecimal
-    :title "11) new BigDecimal(double)"
-    :where :stack
-    :match [#"^java\.math\.BigDecimal\.<init>\(double\)$"]
-    :advice "BigDecimal.valueOf(double) точнее и дешевле."}
+    {:id :bigdecimal
+     :title "11) new BigDecimal(double)"
+     :where :stack
+     :match [#"^java\.math\.BigDecimal\.<init>\(double\)$"]
+    :advice "BigDecimal.valueOf(double) is more precise and cheaper."}
 
    ;; toCharArray()
-   {:id :tochar
-    :title "12) String.toCharArray in hot path"
-    :where :stack
-    :match [#"^java\.lang\.String\.toCharArray\(\)$"]
-    :advice "Использовать charAt/regionMatches вместо аллокации массива."}
+    {:id :tochar
+     :title "12) String.toCharArray in hot path"
+     :where :stack
+     :match [#"^java\.lang\.String\.toCharArray\(\)$"]
+    :advice "Use charAt/regionMatches instead of allocating an array."}
    ])
 
 ;(test-detect)
@@ -182,7 +182,7 @@
 ;; (re-find #"^java\.lang\.(Integer|Long|Double)\.valueOf\(int\)$" "java.lang.Integer.valueOf(int)")
 
 ;; ----------------------------
-;; 2) Поиск совпадений по стеку/типу
+;; 2) Matching by stack/object type
 ;; ----------------------------
 
 (defn- match-stack? [frames re-list]
@@ -212,18 +212,18 @@
               res (case w
                     :stack (match-stack? frames (:match p))
                     :object (match-object? obj (:match p))
-                    ;; можно комбинировать, если :where = [:stack :object]
+                    ;; can be combined when :where = [:stack :object]
                     (match-stack? frames (:match p)))]
         :when res]
     {:pattern (:id p) :title (:title p) :advice (:advice p)
      :event e :frames frames :obj obj :size sz :ename (event-name e) :top (first frames)}))
 
 ;; ----------------------------
-;; 3) Агрегация результатов
+;; 3) Result aggregation
 ;; ----------------------------
 
 (defn summarize
-  "Агрегирует хиты: количество, суммарный размер аллокаций (если есть), топ-стеки."
+  "Aggregate hits: total count, allocation size (if present), and top stacks."
   [hits {:keys [top-stacks] :or {top-stacks 5}}]
   (let [grouped (group-by :pattern hits)]
     (->> grouped
@@ -249,7 +249,7 @@
          (sort-by :count >))))
 
 ;; ----------------------------
-;; 4) CLI-обвязка (java -jar / clj -M)
+;; 4) CLI wrapper (java -jar / clj -M)
 ;; ----------------------------
 
 ;; (defn -main [& args]
@@ -292,17 +292,17 @@
 ;; (println 123)
 
 
-;; Пример использования:
+;; Usage example:
 ;;   clj -M -m jfr.quickfix.detector /path/to/recording.jfr
 ;;
-;; Если хочешь ограничиться только аллокациями:
+;; To limit the search to allocation events only:
 ;;   (detect-patterns {:jfr-path "x.jfr" :alloc-only? true})
 ;;
-;; Как добавить свой паттерн на конкретный enum:
+;; How to add a custom pattern for a specific enum:
 ;;   (def my (conj default-patterns
 ;;                 {:id :my-enum-array
 ;;                  :title "Specific enum array allocations"
 ;;                  :where :object
 ;;                  :match [#"\[Lcom\.acme\.MyEnum;"]
-;;                  :advice "Кэшируй MyEnum.values()"}))
+;;                  :advice "Cache MyEnum.values()"}))
 ;;   (detect-patterns {:jfr-path "x.jfr" :patterns my})
