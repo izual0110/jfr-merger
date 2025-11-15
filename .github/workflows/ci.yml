@@ -20,6 +20,9 @@ jobs:
           path: /tmp/.buildx-cache
           key: buildx-cache
 
+      - name: Create stable builder
+        run: docker buildx create --name my-builder --driver docker-container --bootstrap --use
+
       - name: Prepare Maven cache directory
         run: |
           mkdir -p ~/.m2 && tree $PWD/
@@ -63,10 +66,3 @@ jobs:
             echo "org/clojure dependency still missing"
             exit 1
           fi
-
-#      - name: Move Docker layer cache
-#        run: |
-#          rm -rf /tmp/.buildx-cache
-#          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-
