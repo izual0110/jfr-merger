@@ -1,7 +1,8 @@
 (ns jfr.core
-  (:require 
+  (:require
    [jfr.storage :as storage]
    [jfr.service :as service]
+   [jfr.detector.worker :as detector-worker]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [compojure.route :refer [resources]]
    [compojure.core :refer [defroutes GET POST]]
@@ -26,11 +27,19 @@
 
 (defroutes handlers
   (GET "/" [] index)
-  (POST "/api/heatmap" req (let [[uuid stats] (service/generate-heatmap req)] 
-                             {:status 200 
-                              :headers {"Content-Type" "application/json"} 
-                              :body (json/write-str {:uuid uuid :stats stats})}))
+  (POST "/api/heatmap" req (let [{:keys [uuid stats detector]} (service/generate-heatmap req)]
+                             {:status 200
+                              :headers {"Content-Type" "application/json"}
+                              :body (json/write-str {:uuid uuid :stats stats :detector detector})}))
   (GET "/api/heatmap/:uuid" [uuid] (get-heatmap uuid))
+  (GET "/api/detector/:uuid" [uuid]
+       (if-let [result (service/detector-result uuid)]
+         {:status 200
+          :headers {"Content-Type" "application/json"}
+          :body (json/write-str result)}
+         {:status 404
+          :headers {"Content-Type" "application/json"}
+          :body (json/write-str {:error "Detector result not found"})}))
   (GET "/api/storage/stats" [] {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str (storage/stats))})
@@ -42,6 +51,7 @@
 (defonce server (atom nil))
 
 (defn stop-server []
+  (detector-worker/stop!)
   (storage/destroy)
   (when-not (nil? @server)
     (@server :timeout 100)
@@ -57,6 +67,7 @@
   (println "Hello, World!")
   (println "http://localhost:8080/index.html")
   (storage/init)
+  (detector-worker/start!)
   (reset! server (run-server #'app {:port 8080 :max-body (* 1 1024 1024 1024)})))
 
 
