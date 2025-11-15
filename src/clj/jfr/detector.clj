@@ -89,85 +89,85 @@
 
 (def default-patterns
   [;; enum.values() -> Enum.clone(): enum array allocation on each call
-    {:id :enum-values
-     :title "1) Enum.values clone array"
+    {:id 1
+     :title "Enum.values clone array"
      :where :stack
      :match [#"\.values\(\)$"]
     :advice "Move MyEnum.values() out of tight loops into a local cache, or use static final T[] CACHE."}
 
    ;; String.split(regex) inside a loop: Pattern compilation + array allocation
-    {:id :string-split
-     :title "2) String.split(regex) in hot path"
+    {:id 2
+     :title "String.split(regex) in hot path"
      :where :stack
      :match [#"^java\.lang\.String\.split\(java\.lang\.String\)$"]
     :advice "Switch to indexOf/substrings or cache the Pattern in a static final field."}
 
    ;; String.format: heavyweight Formatter + plenty of temporaries
-    {:id :string-format
-     :title "3) String.format in hot path"
+    {:id 3
+     :title "String.format in hot path"
      :where :stack
      :match [#"^java\.lang\.String\.format\(java\.lang\.String,java\.lang\.Object\[\]\)$" #"^java\.util\.Formatter\."]
     :advice "Replace with concatenation or StringBuilder."}
 
    ;; SimpleDateFormat created/used frequently
-    {:id :sdf-new
-     :title "4) new SimpleDateFormat repeatedly"
+    {:id 4
+     :title "new SimpleDateFormat repeatedly"
      :where :stack
      :match [#"^java\.text\.SimpleDateFormat\.<init>\(java\.lang\.String\)$"]
     :advice "Switch to immutable java.time.DateTimeFormatter (thread-safe)."}
 
    ;; Autoboxing in collections/streams
-    {:id :boxing
-     :title "5) Autoboxing on hot path"
+    {:id 5
+     :title "Autoboxing on hot path"
      :where :stack
      :match [#"^java\.lang\.(Integer|Long|Double)\.valueOf\(int\)$"]
     :advice "Prefer primitives/IntStream/fastutil/trove and avoid boxing inside loops."}
 
    ;; Random created in each method
-    {:id :random-new
-     :title "6) new Random() frequently"
+    {:id 6
+     :title "new Random() frequently"
      :where :stack
      :match [#"^java\.util\.Random\.<init>\(.*\)$"]
     :advice "Use ThreadLocalRandom.current() / SplittableRandom instead."}
 
    ;; Optional.of(...) in a tight loop
-    {:id :optional
-     :title "7) Optional allocations in hot path"
+    {:id 7
+     :title "Optional allocations in hot path"
      :where :stack
      :match [#"^java\.util\.Optional\.of\(java\.lang\.Object\)?$"]
     :advice "Remove unnecessary Optional allocations in loops; a simple condition is faster."}
 
    ;; Stream/forEach on short collections
-    {:id :streams
-     :title "8) Stream pipeline in tight loop"
+    {:id 8
+     :title "Stream pipeline in tight loop"
      :where :stack
      :match [#"^java\.util\.stream\."]
     :advice "A plain for-loop is faster and avoids extra allocations."}
 
    ;; map.keySet().contains(x)
-    {:id :keyset-contains
-     :title "9) keySet().contains instead of containsKey"
+    {:id 9
+     :title "keySet().contains instead of containsKey"
      :where :stack
      :match [#"\.keySet$" #"\.contains\(java\.lang\.Object\)$"]
     :advice "Call Map.containsKey(x) instead."}
 
    ;; System.currentTimeMillis inside a loop
-    {:id :currentTime
-     :title "10) System.currentTimeMillis in loop"
+    {:id 10
+     :title "System.currentTimeMillis in loop"
      :where :stack
      :match [#"^java\.lang\.System\.currentTimeMillis\(\)$"]
     :advice "Store the value in a variable outside the loop."}
 
    ;; BigDecimal(double)
-    {:id :bigdecimal
-     :title "11) new BigDecimal(double)"
+    {:id 11
+     :title "new BigDecimal(double)"
      :where :stack
      :match [#"^java\.math\.BigDecimal\.<init>\(double\)$"]
     :advice "BigDecimal.valueOf(double) is more precise and cheaper."}
 
    ;; toCharArray()
-    {:id :tochar
-     :title "12) String.toCharArray in hot path"
+    {:id 12
+     :title "String.toCharArray in hot path"
      :where :stack
      :match [#"^java\.lang\.String\.toCharArray\(\)$"]
     :advice "Use charAt/regionMatches instead of allocating an array."}
@@ -240,11 +240,11 @@
                                     (map (fn [[k v]] (str "[" v "] " k)))
                                     (take top-stacks))]
                   ;; (println stacks)
-                  {:pattern pid
+                  {:id pid
                    :title title
                    :advice advice
                    :count cnt
-                   :alloc-bytes (when (pos? allocsum) allocsum)
+                   :alloc-bytes (if (pos? allocsum) allocsum "unknown")
                    :top-stacks stacks})))
          (sort-by :count >))))
 
@@ -286,7 +286,7 @@
       (println " " top-stacks)
       )))
 
-(test-detect)
+;; (test-detect)
 
 
 ;; (println 123)

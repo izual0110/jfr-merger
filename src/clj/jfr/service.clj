@@ -51,11 +51,8 @@
     (json/read-str (String. bytes StandardCharsets/UTF_8) :key-fn keyword)))
 
 (defn- schedule-detector! [uuid merged-path]
-  (let [scheduled-at (System/currentTimeMillis)
-        pending {:uuid uuid
-                 :status "pending"
-                 :scheduled-at scheduled-at}]
-    (write-detector-result! uuid pending)
+  (let [scheduled-at (System/currentTimeMillis)]
+    (write-detector-result! uuid {:uuid uuid  :status "pending" :scheduled-at scheduled-at})
     (detector-worker/enqueue!
      (fn []
        (let [started-at (System/currentTimeMillis)]
@@ -64,7 +61,6 @@
                                                       :alloc-only? false})
                  summary (detector/summarize hits {:top-stacks 5})
                  finished-at (System/currentTimeMillis)
-                 _ (println "Summary item:" summary)
                  result {:uuid uuid
                          :status "done"
                          :scheduled-at scheduled-at
@@ -72,7 +68,8 @@
                          :finished-at finished-at
                          :hit-count (count hits)
                          :summary summary}]
-             (write-detector-result! uuid result))
+             (write-detector-result! uuid result)
+             (println "Detector job completed for" uuid "\n\tat" finished-at "\n\tduration:" (- finished-at started-at) "ms"))
            (catch Throwable t
              (let [finished-at (System/currentTimeMillis)
                    result {:uuid uuid
@@ -84,7 +81,7 @@
                (println "Detector job failed for" uuid ":" (.getMessage t))
                (.printStackTrace t)
                (write-detector-result! uuid result)))))))
-    pending))
+    (println "Scheduled detector job for" uuid "\n\tat" scheduled-at)))
 
 (defn generate-heatmap [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
@@ -102,9 +99,7 @@
     (->>  (convert-to-bytes merged-path "") (storage/save-bytes uuid))
     (->> (convert-to-bytes merged-path "--cpu") (storage/save-bytes (str uuid "-cpu")))
     (->> (convert-to-bytes merged-path "--alloc") (storage/save-bytes (str uuid "-alloc")))
-    (let [stats (jfr-stats merged-path)
-          detector (schedule-detector! uuid merged-path)]
-      {:uuid uuid
-       :stats stats
-       :detector detector})))
+    (let [stats (jfr-stats merged-path)]
+      (schedule-detector! uuid merged-path)
+      {:uuid uuid :stats stats})))
 

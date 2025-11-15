@@ -27,10 +27,10 @@
 
 (defroutes handlers
   (GET "/" [] index)
-  (POST "/api/heatmap" req (let [{:keys [uuid stats detector]} (service/generate-heatmap req)]
+  (POST "/api/heatmap" req (let [{:keys [uuid stats]} (service/generate-heatmap req)]
                              {:status 200
                               :headers {"Content-Type" "application/json"}
-                              :body (json/write-str {:uuid uuid :stats stats :detector detector})}))
+                              :body (json/write-str {:uuid uuid :stats stats})}))
   (GET "/api/heatmap/:uuid" [uuid] (get-heatmap uuid))
   (GET "/api/detector/:uuid" [uuid]
        (if-let [result (service/detector-result uuid)]
