@@ -20,9 +20,6 @@ jobs:
           path: /tmp/.buildx-cache
           key: buildx-cache
 
-      - name: Create stable builder
-        run: docker buildx create --name my-builder --driver docker-container --bootstrap --use
-
       - name: Prepare Maven cache directory
         run: |
           mkdir -p ~/.m2 && tree $PWD/
