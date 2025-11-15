@@ -9,7 +9,7 @@
             [jfr.storage :as storage]
             [jfr.utils :as utils]
             [jfr.environ :as env]
-            [jfr.detector :as detector]
+            [jfr.detector.detector :as detector]
             [jfr.detector.worker :as detector-worker]))
 
 (defn- get-temp-dir [] (env/temp-dir))

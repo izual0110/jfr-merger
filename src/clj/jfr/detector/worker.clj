@@ -16,13 +16,12 @@
 (defn- worker-loop []
   (try
     (loop []
-      (when-let [task (.poll queue 500 TimeUnit/MILLISECONDS)]
+      (when-let [task (.poll queue 5000 TimeUnit/MILLISECONDS)]
         (run-task task))
       (when (some? @worker-thread)
         (recur)))
-    (catch InterruptedException _
-      ;; allow exit
-      )))
+    (catch InterruptedException e
+      (.printStackTrace e))))
 
 (defn start! []
   (when (nil? @worker-thread)

@@ -1,7 +1,6 @@
-(ns jfr.detector
+(ns jfr.detector.detector
   (:require [clojure.string :as str])
   (:import
-   ;; JDK Flight Recorder API (available since JDK 11+)
    [jdk.jfr.consumer RecordingFile RecordedEvent RecordedFrame RecordedStackTrace]
    [java.nio.file Paths]))
 
@@ -70,14 +69,6 @@
 
 (defn- object-class ^String [^RecordedEvent e]
   (when (.hasField e "objectClass") (str (.getValue e "objectClass"))))
-
-;; (defn- is-alloc? [^RecordedEvent e]
-;;   (str/starts-with? (event-name e) "jdk.ObjectAllocation"))
-
-;; (defn- top-frame ^String [^RecordedEvent e]
-;;   (let [frames (event->frames e)]
-;;     (when (seq frames)
-;;       (frame->fq-method (first frames)))))
 
 (defn- stack->strings [^RecordedEvent e]
   (map frame->fq-method (event->frames e)))
@@ -175,18 +166,11 @@
 
 ;(test-detect)
 
-;4 11 3 2 8 1 5 6 7 9 10
-;10 9 7 6 5 12 1 8 2 3 11 4
-
-;; (re-find #"^java\.lang\.String\.format\(java\.lang\.String,java\.lang\.Object\[\]\)$" "java.lang.String.format(java.lang.String,java.lang.Object[])")
-;; (re-find #"^java\.lang\.(Integer|Long|Double)\.valueOf\(int\)$" "java.lang.Integer.valueOf(int)")
-
 ;; ----------------------------
 ;; 2) Matching by stack/object type
 ;; ----------------------------
 
 (defn- match-stack? [frames re-list]
-;;   (println "Matching stack frames:" frames "against" re-list)
   (let [pred (fn [^String f] (some #(re-find % f) re-list))]
     (boolean (some pred frames))))
 
@@ -199,16 +183,11 @@
   (for [^RecordedEvent e (jfr-events jfr-path)
         :when (or (not alloc-only?) 
                   (= (event-name e) "jdk.ObjectAllocationInNewTLAB"))
-        :let [
-            ;;   _ (println "RecordedEvent" (event-name e))
-              ;;   _ (println "RecordedEvent" e)
-              frames (vec (stack->strings e))
-              ;; _ (println frames)
+        :let [frames (vec (stack->strings e))
               obj    (object-class e)
               sz     (alloc-size e)]
         p patterns
         :let [w (:where p)
-              ;;   _ (println "checking pattern" (:id p) "on event" (event-name e) "frames" frames)
               res (case w
                     :stack (match-stack? frames (:match p))
                     :object (match-object? obj (:match p))
@@ -239,7 +218,6 @@
                                     (sort-by val >)
                                     (map (fn [[k v]] (str "[" v "] " k)))
                                     (take top-stacks))]
-                  ;; (println stacks)
                   {:id pid
                    :title title
                    :advice advice
@@ -247,27 +225,6 @@
                    :alloc-bytes (if (pos? allocsum) allocsum "unknown")
                    :top-stacks stacks})))
          (sort-by :count >))))
-
-;; ----------------------------
-;; 4) CLI wrapper (java -jar / clj -M)
-;; ----------------------------
-
-;; (defn -main [& args]
-;;   (let [jfr-path (or (first args)
-;;                      (do (binding [*out* *err*]
-;;                            (println "Usage: clj -M -m jfr.quickfix.detector <recording.jfr>"))
-;;                          (System/exit 2)))
-;;         hits (detect-patterns {:jfr-path jfr-path
-;;                                :patterns default-patterns
-;;                                :alloc-only? false})
-;;         summary (summarize hits {:top-stacks 5})]
-;;     (println "== Quick-fix patterns in" jfr-path)
-;;     (doseq [{:keys [pattern title count alloc-bytes top-stacks advice]} summary]
-;;       (println "\n--" (name pattern) ":" title)
-;;       (println "   matches:" count (when alloc-bytes (str "  alloc-bytes≈" alloc-bytes)))
-;;       (println "   advice: " advice)
-;;       (doseq [[stk n] top-stacks]
-;;         (println "   " (format "[%5d] %s" n stk))))))
 
 (defn test-detect []
   (let [
@@ -281,28 +238,8 @@
       (println "\n--" (name pattern) ":" title)
       (println "   matches:" count (if (some? alloc-bytes) (str "  alloc-bytes≈" alloc-bytes) ""))
       (println "   advice: " advice)
-      ;; (doseq [[stk n] top-stacks]
-      ;;   (println "   " (format "[%5d] %s" n stk)))
-      (println " " top-stacks)
-      )))
+      (println " " top-stacks))))
 
 ;; (test-detect)
 
 
-;; (println 123)
-
-
-;; Usage example:
-;;   clj -M -m jfr.quickfix.detector /path/to/recording.jfr
-;;
-;; To limit the search to allocation events only:
-;;   (detect-patterns {:jfr-path "x.jfr" :alloc-only? true})
-;;
-;; How to add a custom pattern for a specific enum:
-;;   (def my (conj default-patterns
-;;                 {:id :my-enum-array
-;;                  :title "Specific enum array allocations"
-;;                  :where :object
-;;                  :match [#"\[Lcom\.acme\.MyEnum;"]
-;;                  :advice "Cache MyEnum.values()"}))
-;;   (detect-patterns {:jfr-path "x.jfr" :patterns my})
