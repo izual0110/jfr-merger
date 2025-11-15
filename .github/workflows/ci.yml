@@ -22,7 +22,7 @@ jobs:
 
       - name: Prepare Maven cache directory
         run: |
-          mkdir -p ~/.m2
+          mkdir -p ~/.m2 && tree $PWD/
 
       - name: Cache Clojure Maven repository
         uses: actions/cache@v4
@@ -47,11 +47,13 @@ jobs:
             --target clojure \
             --load \
             --cache-from type=local,src=/tmp/.buildx-cache \
-            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --cache-to type=local,dest=/tmp/.buildx-cache,mode=max \
             -t jfr-merger-ci .
           docker run --rm \
-            -v ~/.m2:/root/.m2 \
-            jfr-merger-ci /app/clojure/bin/clojure -M:test
+            -v $HOME/.m2:/root/.m2 \
+            -v $PWD:/tmp/incoming \
+            jfr-merger-ci \
+            /bin/bash -c "cp -r /tmp/incoming/* /app/ && /app/clojure/bin/clojure -M:test"
 
       - name: Check Clojure cache after build
         run: |
@@ -61,10 +63,3 @@ jobs:
             echo "org/clojure dependency still missing"
             exit 1
           fi
-
-      - name: Move Docker layer cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-
