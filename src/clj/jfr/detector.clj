@@ -237,7 +237,9 @@
                                            (->> frames (take 6) (str/join " ← "))))
                                     (frequencies)
                                     (sort-by val >)
+                                    (map (fn [[k v]] (str "[" v "] " k)))
                                     (take top-stacks))]
+                  ;; (println stacks)
                   {:pattern pid
                    :title title
                    :advice advice
@@ -277,10 +279,12 @@
     (println "== Quick-fix patterns in" jfr)
     (doseq [{:keys [pattern title count alloc-bytes top-stacks advice]} summary]
       (println "\n--" (name pattern) ":" title)
-      (println "   matches:" count (when alloc-bytes (str "  alloc-bytes≈" alloc-bytes)))
+      (println "   matches:" count (if (some? alloc-bytes) (str "  alloc-bytes≈" alloc-bytes) ""))
       (println "   advice: " advice)
-      (doseq [[stk n] top-stacks]
-        (println "   " (format "[%5d] %s" n stk))))))
+      ;; (doseq [[stk n] top-stacks]
+      ;;   (println "   " (format "[%5d] %s" n stk)))
+      (println " " top-stacks)
+      )))
 
 (test-detect)
 

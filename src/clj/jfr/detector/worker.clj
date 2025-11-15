@@ -22,7 +22,7 @@
         (recur)))
     (catch InterruptedException _
       ;; allow exit
-      ))
+      )))
 
 (defn start! []
   (when (nil? @worker-thread)
