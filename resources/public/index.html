@@ -379,14 +379,26 @@
 })();
 </script>
 <script>
+const statsModal = document.getElementById('statsModal');
+const closeStatsButton = document.getElementById('closeStats');
+
+function closeStatsModal(){
+  statsModal.style.display = 'none';
+}
+
 function showStatsModal(stats, uuid){
-  document.getElementById('statsModal').style.display = 'flex';
+  statsModal.style.display = 'flex';
   document.getElementById('statsUuid').textContent = uuid;
   document.getElementById('statsContent').textContent = JSON.stringify(stats, null, 2);
 }
-document.getElementById('closeStats').onclick = function(){
-  document.getElementById('statsModal').style.display = 'none';
-};
+
+closeStatsButton.onclick = closeStatsModal;
+
+document.addEventListener('keydown', (event) => {
+  if(event.key === 'Escape' && statsModal.style.display !== 'none'){
+    closeStatsModal();
+  }
+});
 </script>
 </body>
 </html>
