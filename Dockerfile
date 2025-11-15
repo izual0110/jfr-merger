@@ -10,15 +10,14 @@ RUN curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.3.
     rm linux-install.sh && \
     mkdir -p /app/lib && \
     curl -L -o /app/lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.2/jfr-converter.jar
+WORKDIR /app
 
 FROM clojure AS builder
-WORKDIR /app
 COPY . /app
 RUN  /app/clojure/bin/clojure -T:build uber
 
 FROM base
 EXPOSE 8080
-WORKDIR /app
 COPY --from=builder /app/target/jfr-merger-0.1.1.jar /app/jfr-merger-0.1.1.jar
 
 CMD ["sh", "-c", "java --enable-native-access=ALL-UNNAMED $JAVA_OPTS -XX:+PrintFlagsFinal -jar jfr-merger-0.1.1.jar"]
