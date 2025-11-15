@@ -63,7 +63,7 @@ clj -X:uberjar
 
 # or build and run the executable uberjar
 clj -T:build uber
-java -jar target/app-0.1.0-standalone.jar
+java -jar target/jfr-merger-0.1.1.jar
 ```
 
 Once the server is running, open [http://localhost:8080/index.html](http://localhost:8080/index.html) in your browser.
@@ -84,6 +84,9 @@ docker run --rm -it --entrypoint bash jfr-merger
 
 # Drop into a running container (replace `jfr-merger` with the container name)
 docker exec -it jfr-merger /bin/bash
+
+# For remove everything
+docker system prune -a
 ```
 
 To orchestrate alongside other services, use Docker Compose:
