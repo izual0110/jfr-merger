@@ -84,6 +84,9 @@ docker run --rm -it --entrypoint bash jfr-merger
 
 # Drop into a running container (replace `jfr-merger` with the container name)
 docker exec -it jfr-merger /bin/bash
+
+# For remove everything
+docker system prune -a
 ```
 
 To orchestrate alongside other services, use Docker Compose:
