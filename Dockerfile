@@ -1,9 +1,8 @@
 FROM quay.io/fedora/fedora-minimal:43 AS base
-RUN dnf install -y java-25-openjdk-headless tar && dnf clean all && rm -rf /var/cache/yum
+RUN dnf install -y java-25-openjdk-headless tar gzip && dnf clean all && rm -rf /var/cache/yum
 
 FROM base AS clojure
-RUN dnf install -y rlwrap && \
-    curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.3.1577/linux-install.sh && \
+RUN curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.3.1577/linux-install.sh && \
     chmod +x linux-install.sh && \
     mkdir -p /app/clojure && \
     ./linux-install.sh -p /app/clojure && \
