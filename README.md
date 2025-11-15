@@ -63,7 +63,7 @@ clj -X:uberjar
 
 # or build and run the executable uberjar
 clj -T:build uber
-java -jar target/app-0.1.0-standalone.jar
+java -jar target/jfr-merger-0.1.1.jar
 ```
 
 Once the server is running, open [http://localhost:8080/index.html](http://localhost:8080/index.html) in your browser.

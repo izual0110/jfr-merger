@@ -22,9 +22,9 @@ clj -M:repl
 # Execute the test suite
 clj -M:test
 
-# Build and run the standalone uberjar
+# Build and run the uberjar
 clj -T:build uber
-java -jar target/app-0.1.0-standalone.jar
+java -jar target/jfr-merger-0.1.1.jar
 
 # Docker workflow
 docker compose up --build
