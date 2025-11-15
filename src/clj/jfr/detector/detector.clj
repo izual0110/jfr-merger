@@ -226,20 +226,3 @@
                    :top-stacks stacks})))
          (sort-by :count >))))
 
-(defn test-detect []
-  (let [
-        ;; jfr "test/BadPatternsDemo.jfr"
-        jfr "test/SmallBadPatternsDemo.jfr"
-        hits (detect-patterns {:jfr-path jfr :alloc-only? false})
-        _ (println "Detected hits:" (count hits))
-        summary (summarize hits {:top-stacks 3})]
-    (println "== Quick-fix patterns in" jfr)
-    (doseq [{:keys [pattern title count alloc-bytes top-stacks advice]} summary]
-      (println "\n--" (name pattern) ":" title)
-      (println "   matches:" count (if (some? alloc-bytes) (str "  alloc-bytes≈" alloc-bytes) ""))
-      (println "   advice: " advice)
-      (println " " top-stacks))))
-
-;; (test-detect)
-
-
