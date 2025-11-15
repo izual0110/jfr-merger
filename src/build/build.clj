@@ -1,11 +1,11 @@
 (ns build
   (:require [clojure.tools.build.api :as b]))
 
-(def lib 'app/app)          
-(def version "0.1.0")
+(def lib 'app/jfr-merger)
+(def version "0.1.1")
 (def class-dir "target/classes") 
 (def basis (b/create-basis {:project "deps.edn"}))  
-(def uber-file (format "target/%s-%s-standalone.jar"     
+(def uber-file (format "target/%s-%s.jar"
                        (name lib) version))
 
 (defn clean [_]
