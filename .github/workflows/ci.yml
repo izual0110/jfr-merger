@@ -50,8 +50,8 @@ jobs:
             --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
             -t jfr-merger-ci .
           docker run --rm \
-            -v ~/.m2:/root/.m2 \
-            -v ~/jfr-merger:/tmp/incoming \
+            -v $HOME/.m2:/root/.m2 \
+            -v $PWD/jfr-merger:/tmp/incoming \
             jfr-merger-ci \
             /bin/bash -c "cp /tmp/incoming/* /app/ && /app/clojure/bin/clojure -M:test"
 
