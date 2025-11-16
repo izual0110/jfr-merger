@@ -164,8 +164,6 @@
     :advice "Use charAt/regionMatches instead of allocating an array."}
    ])
 
-;(test-detect)
-
 ;; ----------------------------
 ;; 2) Matching by stack/object type
 ;; ----------------------------
