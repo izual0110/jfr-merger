@@ -209,7 +209,7 @@
 
       infoIcon.addEventListener('click', (e) => {
         e.stopPropagation();
-        showStatsModal(item.stats, `Statistics`);
+        showStatsModal(JSON.stringify(item.stats, null, 2), `Statistics`);
       });
 
       const detailsIcon = document.createElement('span');
@@ -230,9 +230,9 @@
             throw new Error("HTTP " + response.status);
           }
 
-          showStatsModal(await response.json(), `Recommendations`);
+          showStatsModal(await response.text(), `Recommendations`);
         } catch (err) {
-          showStatsModal(err.toString(), `Recommendations`);
+          showStatsModal(JSON.stringify(err.toString(), null, 2), `Recommendations`);
           console.error(err);
         }
       });
@@ -389,7 +389,7 @@ function closeStatsModal(){
 function showStatsModal(stats, uuid){
   statsModal.style.display = 'flex';
   document.getElementById('statsUuid').textContent = uuid;
-  document.getElementById('statsContent').textContent = JSON.stringify(stats, null, 2);
+  document.getElementById('statsContent').innerHTML = stats;
 }
 
 closeStatsButton.onclick = closeStatsModal;

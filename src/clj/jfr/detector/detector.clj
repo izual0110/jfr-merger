@@ -40,7 +40,7 @@
       (let [args-start (.indexOf desc "(")
             args-end (.indexOf desc ")")
             args-str (subs desc (inc args-start) args-end)
-            ret-str (subs desc (inc args-end))
+            _ (subs desc (inc args-end))
             ;; parse arguments
             parse-args (fn parse-args [s acc]
                          (if (empty? s)
@@ -213,10 +213,9 @@
                       allocsum (reduce (fn [a {:keys [size]}] (if size (+ a size) a)) 0 xs)
                       stacks   (->> xs
                                     (map (fn [{:keys [frames]}]
-                                           (->> frames (take 6) (str/join " ← "))))
+                                           (->> frames (take 6) (vec))))
                                     (frequencies)
                                     (sort-by val >)
-                                    (map (fn [[k v]] (str "[" v "] " k)))
                                     (take top-stacks))]
                   {:id pid
                    :title title

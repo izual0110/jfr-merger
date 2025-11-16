@@ -3,6 +3,7 @@
    [jfr.storage :as storage]
    [jfr.service :as service]
    [jfr.detector.worker :as detector-worker]
+   [jfr.detector.report :as report]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [compojure.route :refer [resources]]
    [compojure.core :refer [defroutes GET POST]]
@@ -32,7 +33,7 @@
                               :headers {"Content-Type" "application/json"}
                               :body (json/write-str {:uuid uuid :stats stats})}))
   (GET "/api/heatmap/:uuid" [uuid] (get-heatmap uuid))
-  (GET "/api/detector/:uuid" [uuid]
+  (GET "/api/detector-raw/:uuid" [uuid]
        (if-let [result (service/detector-result uuid)]
          {:status 200
           :headers {"Content-Type" "application/json"}
@@ -40,6 +41,16 @@
          {:status 404
           :headers {"Content-Type" "application/json"}
           :body (json/write-str {:error "Detector result not found"})}))
+  
+  (GET "/api/detector/:uuid" [uuid]
+    (if-let [result (service/detector-result uuid)]
+      {:status 200
+       :headers {"Content-Type" "text/html; charset=utf-8"}
+       :body (str (h/html (report/report-div result)))}
+      {:status 404
+       :headers {"Content-Type" "application/json"}
+       :body (json/write-str {:error "Detector result not found"})}))
+  
   (GET "/api/storage/stats" [] {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str (storage/stats))})
