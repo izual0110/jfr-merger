@@ -1,4 +1,4 @@
-(ns jfr.detector.report-test
+(ns jfr.report-test
   (:require [clojure.test :refer :all]
             [clojure.string :as str]
             [hiccup2.core :as h]
@@ -7,9 +7,9 @@
 (def sample-report
   {:uuid "test-uuid-1234"
    :status "completed"
-   :scheduled-at 0
-   :started-at 0
-   :finished-at 0
+   :scheduled-at 1
+   :started-at 2
+   :finished-at 3
    :hit-count 3832
    :summary [{:id 4
               :title "new SimpleDateFormat repeatedly"
