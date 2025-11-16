@@ -19,6 +19,14 @@
   (when (and started finished)
     (str (- finished started) " ms")))
 
+(defn- issue-stack-item [[frames hits]]
+  [:li.issue-stack-item
+   (when hits
+     [:div.issue-stack-hits (str hits " hits")])
+   [:ol.issue-stack-frames
+    (for [frame (or frames [])]
+      [:li.issue-stack-frame [:code.issue-stack-frame-code frame]])]])
+
 (defn- issue-block [{:keys [id title advice count alloc-bytes top-stacks]}]
   [:div.issue
    [:div.issue-header
@@ -35,14 +43,8 @@
      [:details.issue-stacks
       [:summary "Top stacks (" (clojure.core/count top-stacks) ")"]
       [:ul.issue-stack-list
-       (for [s top-stacks]
-         [:li.issue-stack-item
-          [:code.issue-stack-code 
-            [:ul.issue-stack-list
-             ;;todo: fix nested ul
-           (let [[stacks _] s] 
-             (for [sub-stack stacks] 
-               [:li.issue-stack-item sub-stack]))]]])]])])
+       (for [stack top-stacks]
+         (issue-stack-item stack))]])])
 
 (defn report-div
   "It takes a report map (from JSON) and returns a Hiccup tree with a single root <div>"
