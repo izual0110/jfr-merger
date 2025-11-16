@@ -61,13 +61,9 @@
        [:span.report-meta-item (str "Hits: " hit-count)])
      (when (and started-at finished-at)
        [:span.report-meta-item
-        (str "Duration: " (format-duration-ms started-at finished-at))])]]
+        (str "Duration: " (format-duration-ms started-at finished-at))])
+     [:span.report-meta-item (str "Findings: " (count summary) " pattern" (when (not= 1 (count summary)) "s"))]]]
    [:div.report-body
-    [:div.report-summary-header
-     [:span.report-summary-title "Findings"]
-     [:span.report-summary-count
-      (str (count summary) " pattern"
-           (when (not= 1 (count summary)) "s"))]]
     [:div.report-issues
      (for [issue summary]
        (issue-block issue))]]])
