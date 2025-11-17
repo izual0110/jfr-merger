@@ -36,9 +36,8 @@
     [:div.issue-meta
      [:span.issue-meta-item (str "hits: " count)]
      [:span.issue-meta-item (str "alloc: " (format-bytes alloc-bytes))]]]
-   [:div.issue-advice
-    [:span.issue-advice-label "Advice: "]
-    [:span.issue-advice-text advice]]
+   [:span.issue-advice-label "Advice: "]
+   [:span.issue-advice-text advice]
    (when (seq top-stacks)
      [:details.issue-stacks
       [:summary "Top stacks (" (clojure.core/count top-stacks) ")"]
