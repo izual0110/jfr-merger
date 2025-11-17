@@ -59,7 +59,7 @@
          (try
            (let [hits (detector/detect-patterns {:jfr-path merged-path
                                                       :alloc-only? false})
-                 summary (detector/summarize hits {:top-stacks 5})
+                 summary (detector/summarize hits {:top-stacks 10})
                  finished-at (System/currentTimeMillis)
                  result {:uuid uuid
                          :status "done"

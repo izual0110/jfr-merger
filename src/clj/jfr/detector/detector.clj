@@ -211,7 +211,7 @@
                       allocsum (reduce (fn [a {:keys [size]}] (if size (+ a size) a)) 0 xs)
                       stacks   (->> xs
                                     (map (fn [{:keys [frames]}]
-                                           (->> frames (take 6) (vec))))
+                                           (->> frames (take 20) (vec))))
                                     (frequencies)
                                     (sort-by val >)
                                     (take top-stacks))]
