@@ -9,7 +9,7 @@
     :root{--bg:#0b1220;--fg:#e9eef5;--acc:#3b82f6;--mut:#96a0b5}
     *{box-sizing:border-box}
     body{margin:0;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:min(1300px,100%)}
+    .grid{display:grid;grid-template-columns:1fr 2fr;gap:16px;width:min(1500px,100%)}
     .panel{background:#0f172a;border:1px solid #223;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.3);padding:18px;min-height:360px}
     h1{margin:0 0 8px;font-size:20px}
     p{margin:0 0 12px;color:var(--mut)}
@@ -64,7 +64,7 @@
   </div>
 
   <div id="statsModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
-    <div style="background:#181e2a;color:#e9eef5;padding:24px;border-radius:12px;max-width:900px;max-height:80vh;overflow:auto;box-shadow:0 4px 32px #0008;position:relative;">
+    <div style="background:#181e2a;color:#e9eef5;padding:24px;border-radius:12px;max-width:1500px;max-height:80vh;overflow:auto;box-shadow:0 4px 32px #0008;position:relative;">
       <h3 id="statsTitle" style="margin-top:0;word-break:break-all;overflow-wrap:anywhere;display:flex;align-items:center;justify-content:space-between;font-size:15px;">
         <span id="statsUuid"></span>
         <button id="closeStats" style="margin-left:18px;font-size:20px;background:none;border:none;cursor:pointer;z-index:2;color:#e9eef5;line-height:1;padding-right:0px;padding-top:0px;">✖️</button>
@@ -205,12 +205,38 @@
       infoIcon.style.fontSize = '20px';
       infoIcon.style.verticalAlign = 'middle';
       infoIcon.style.cursor = 'pointer';
-      infoIcon.style.paddingRight = '5px';
+      infoIcon.style.color = 'rgb(45, 212, 191)';
 
       infoIcon.addEventListener('click', (e) => {
         e.stopPropagation();
-        showStatsModal(item.stats, item.uuid);
+        showStatsModal(item.stats, `Statistics`);
       });
+
+      const detailsIcon = document.createElement('span');
+      detailsIcon.textContent = 'Ⓓ';
+      detailsIcon.style.color = '#3b82f6';
+      detailsIcon.style.fontSize = '20px';
+      detailsIcon.style.verticalAlign = 'middle';
+      detailsIcon.style.cursor = 'pointer';
+      detailsIcon.style.paddingRight = '5px';
+      infoIcon.style.color = 'rgb(96, 165, 250)';
+
+      detailsIcon.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try {
+          const response = await fetch("/api/detector/" + item.uuid);
+
+          if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+          }
+
+          showStatsModal(await response.json(), `Recommendations`);
+        } catch (err) {
+          showStatsModal(err.toString(), `Recommendations`);
+          console.error(err);
+        }
+      });
+
 
       const nameSpan = document.createElement('span');
       const displayName = (item.name && item.name.trim()) ? item.name.trim() : item.uuid;
@@ -239,7 +265,7 @@
         finishNameEdit(item.uuid, nameSpan, true);
       });
 
-      uuidSpan.append(infoIcon, nameSpan);
+      uuidSpan.append(infoIcon, detailsIcon, nameSpan);
 
       const a0 = document.createElement('a');
       a0.href = '/api/heatmap/' + item.uuid;
@@ -353,14 +379,26 @@
 })();
 </script>
 <script>
+const statsModal = document.getElementById('statsModal');
+const closeStatsButton = document.getElementById('closeStats');
+
+function closeStatsModal(){
+  statsModal.style.display = 'none';
+}
+
 function showStatsModal(stats, uuid){
-  document.getElementById('statsModal').style.display = 'flex';
+  statsModal.style.display = 'flex';
   document.getElementById('statsUuid').textContent = uuid;
   document.getElementById('statsContent').textContent = JSON.stringify(stats, null, 2);
 }
-document.getElementById('closeStats').onclick = function(){
-  document.getElementById('statsModal').style.display = 'none';
-};
+
+closeStatsButton.onclick = closeStatsModal;
+
+document.addEventListener('keydown', (event) => {
+  if(event.key === 'Escape' && statsModal.style.display !== 'none'){
+    closeStatsModal();
+  }
+});
 </script>
 </body>
 </html>
