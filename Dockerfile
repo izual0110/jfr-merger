@@ -13,12 +13,13 @@ RUN curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.3.
 WORKDIR /app
 
 FROM clojure AS builder
-COPY . /app
+COPY ./src /app/src
+COPY ./deps.edn /app/deps.edn
+COPY ./resources /app/resources
 RUN  /app/clojure/bin/clojure -T:build uber
 
 FROM base
 EXPOSE 8080
 WORKDIR /app
 COPY --from=builder /app/target/jfr-merger-0.1.1.jar /app/jfr-merger-0.1.1.jar
-
 CMD ["sh", "-c", "java --enable-native-access=ALL-UNNAMED $JAVA_OPTS -XX:+PrintFlagsFinal -jar jfr-merger-0.1.1.jar"]
