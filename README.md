@@ -127,8 +127,8 @@ While the SPA is the primary entry point, the server exposes a small REST interf
 
 | Method | Path                    | Description |
 | ------ | ----------------------- | ----------- |
-| `POST` | `/api/heatmap`          | Upload one or more JFR files (`multipart/form-data` field name `files`). Returns `{uuid, stats}` once the heatmaps are generated. |
-| `GET`  | `/api/heatmap/{uuid}`   | Download the HTML heatmap associated with the supplied UUID. CPU and allocation variants append `-cpu`/`-alloc` to the UUID. |
+| `POST` | `/api/convertor`        | Upload one or more JFR files (`multipart/form-data` field name `files`). Optional `addFlamegraph=true` triggers flamegraph generation alongside heatmaps. Returns `{uuid, stats, flame}`. |
+| `GET`  | `/api/convertor/{uuid}` | Download the generated HTML artifact (heatmaps use suffixes `-cpu`/`-alloc`; flamegraphs use `-flame`, `-flame-cpu`, `-flame-alloc`). |
 | `GET`  | `/api/storage/stats`    | Inspect RocksDB statistics (estimated key count, live data size, etc.). |
 | `GET`  | `/api/storage/keys`     | List all stored keys for housekeeping scripts. |
 
@@ -180,4 +180,3 @@ Issues and pull requests are welcome! If you're planning large changes, open an 
 4. Submit a pull request describing your changes.
 
 ---
-
