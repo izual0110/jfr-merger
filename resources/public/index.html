@@ -78,8 +78,6 @@
   'use strict';
   // 1) Settings. Set your real endpoint here:
   const UPLOAD_URL = '/api/heatmap';
-  const DEFAULT_VIEW = 'heatmap'; // 'heatmap' | 'html'
-  const VIEW_PREF_KEY = 'preferredView';
   // 2) Keys in localStorage:
   const LS_KEY = 'htmlLinksHistory';
 
@@ -112,12 +110,7 @@
   radioGroup.style.gap = '12px';
   radioGroup.style.alignItems = 'center';
 
-  const loadPreferredView = () => {
-    const raw = localStorage.getItem(VIEW_PREF_KEY);
-    return raw === 'html' ? 'html' : 'heatmap';
-  };
-
-  let selectedView = loadPreferredView() || DEFAULT_VIEW;
+  let selectedView = 'heatmap';
 
   const makeRadio = (value, labelText) => {
     const wrapper = document.createElement('label');
@@ -140,8 +133,6 @@
     input.addEventListener('change', () => {
       if(input.checked){
         selectedView = value;
-        localStorage.setItem(VIEW_PREF_KEY, selectedView);
-        renderHistory();
       }
     });
 
@@ -161,10 +152,6 @@
   uploadPanel.appendChild(viewSelector);
 
   // === Link history on the right ===
-  function currentView(){
-    return selectedView;
-  }
-
   function loadHistory(){
     try{
       const raw = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
@@ -173,8 +160,7 @@
         if(!item || typeof item !== 'object' || !item.uuid) return null;
         return {
           ...item,
-          name: typeof item.name === 'string' ? item.name : '',
-          view: item.view === 'html' ? 'html' : currentView()
+          name: typeof item.name === 'string' ? item.name : ''
         };
       }).filter(Boolean);
     }catch{
@@ -198,8 +184,7 @@
     } else {
       const entry = {
         ...obj,
-        name: typeof obj.name === 'string' ? obj.name : '',
-        view: currentView()
+        name: typeof obj.name === 'string' ? obj.name : ''
       };
       arr.unshift(entry);
     }
@@ -341,19 +326,14 @@
 
       uuidSpan.append(infoIcon, detailsIcon, nameSpan);
 
-      const makeHref = (suffix) => {
-        const base = item.view === 'html' ? '/api/flamegraph/' : '/api/heatmap/';
-        return base + item.uuid + suffix + (item.view === 'html' ? '-html' : '');
-      };
-
       const a0 = document.createElement('a');
-      a0.href = makeHref('');
+      a0.href = '/api/heatmap/' + item.uuid;
       a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = item.view === 'html' ? 'html' : "all";
       const a1 = document.createElement('a');
-      a1.href = makeHref("-cpu");
+      a1.href = '/api/heatmap/' + item.uuid+"-cpu";
       a1.target = '_blank'; a1.rel = 'noopener'; a1.textContent = "cpu";
       const a2 = document.createElement('a');
-      a2.href = makeHref("-alloc");
+      a2.href = '/api/heatmap/' + item.uuid+"-alloc";
       a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = "alloc";
       li.append(uuidSpan, a0, a1, a2);
       historyEl.append(li);
@@ -426,7 +406,7 @@
         status.textContent = 'Uploaded, but the server did not return a valid uuid.';
       } else {
         status.textContent = 'Done';
-        addToHistory({ ...result, view: currentView() });
+        addToHistory(result);
       }
 
       // Do not remove current items immediately — only after 10 seconds
