@@ -78,6 +78,7 @@
   'use strict';
   // 1) Settings. Set your real endpoint here:
   const UPLOAD_URL = '/api/heatmap';
+  const DEFAULT_VIEW = 'heatmap'; // 'heatmap' | 'html'
   // 2) Keys in localStorage:
   const LS_KEY = 'htmlLinksHistory';
 
@@ -92,7 +93,50 @@
   const historyEl = document.getElementById('history');
   const clearBtn = document.getElementById('clear');
 
+  // 3a) Toggle controls
+  const viewToggle = document.createElement('div');
+  viewToggle.className = 'row';
+  viewToggle.style.justifyContent = 'center';
+  viewToggle.style.marginTop = '12px';
+  viewToggle.style.fontSize = '14px';
+  viewToggle.style.color = '#cbd5e1';
+
+  const toggleLabel = document.createElement('span');
+  toggleLabel.textContent = 'View:';
+  toggleLabel.style.marginRight = '8px';
+
+  const toggle = document.createElement('label');
+  toggle.style.display = 'inline-flex';
+  toggle.style.alignItems = 'center';
+  toggle.style.gap = '8px';
+  toggle.style.cursor = 'pointer';
+
+  const toggleInput = document.createElement('input');
+  toggleInput.type = 'checkbox';
+  toggleInput.id = 'viewToggle';
+  toggleInput.style.accentColor = '#3b82f6';
+  toggleInput.checked = DEFAULT_VIEW === 'html';
+  toggleInput.setAttribute('aria-label', 'Switch between heatmap and flamegraph');
+
+  const toggleText = document.createElement('span');
+  const updateToggleText = () => {
+    toggleText.textContent = toggleInput.checked ? 'Flamegraph' : 'Heatmap';
+  };
+  updateToggleText();
+  toggleInput.addEventListener('change', updateToggleText);
+
+  toggle.append(toggleInput, toggleText);
+  viewToggle.append(toggleLabel, toggle);
+
+  // insert toggle below buttons
+  const uploadPanel = document.querySelector('.panel');
+  uploadPanel.appendChild(viewToggle);
+
   // === Link history on the right ===
+  function currentView(){
+    return toggleInput.checked ? 'html' : 'heatmap';
+  }
+
   function loadHistory(){
     try{
       const raw = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
@@ -101,7 +145,8 @@
         if(!item || typeof item !== 'object' || !item.uuid) return null;
         return {
           ...item,
-          name: typeof item.name === 'string' ? item.name : ''
+          name: typeof item.name === 'string' ? item.name : '',
+          view: item.view === 'html' ? 'html' : DEFAULT_VIEW
         };
       }).filter(Boolean);
     }catch{
@@ -125,7 +170,8 @@
     } else {
       const entry = {
         ...obj,
-        name: typeof obj.name === 'string' ? obj.name : ''
+        name: typeof obj.name === 'string' ? obj.name : '',
+        view: currentView()
       };
       arr.unshift(entry);
     }
@@ -267,14 +313,19 @@
 
       uuidSpan.append(infoIcon, detailsIcon, nameSpan);
 
+      const makeHref = (suffix) => {
+        const base = item.view === 'html' ? '/api/flamegraph/' : '/api/heatmap/';
+        return base + item.uuid + suffix + (item.view === 'html' ? '-html' : '');
+      };
+
       const a0 = document.createElement('a');
-      a0.href = '/api/heatmap/' + item.uuid;
-      a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = "all";
+      a0.href = makeHref('');
+      a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = item.view === 'html' ? 'html' : "all";
       const a1 = document.createElement('a');
-      a1.href = '/api/heatmap/' + item.uuid+"-cpu";
+      a1.href = makeHref("-cpu");
       a1.target = '_blank'; a1.rel = 'noopener'; a1.textContent = "cpu";
       const a2 = document.createElement('a');
-      a2.href = '/api/heatmap/' + item.uuid+"-alloc";
+      a2.href = makeHref("-alloc");
       a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = "alloc";
       li.append(uuidSpan, a0, a1, a2);
       historyEl.append(li);
@@ -347,7 +398,7 @@
         status.textContent = 'Uploaded, but the server did not return a valid uuid.';
       } else {
         status.textContent = 'Done';
-        addToHistory(result);
+        addToHistory({ ...result, view: currentView() });
       }
 
       // Do not remove current items immediately — only after 10 seconds
