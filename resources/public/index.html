@@ -50,6 +50,10 @@
 
       <ul id="list" aria-live="polite"></ul>
       <div class="row"><progress id="prog" max="100" value="0" hidden></progress><span id="status" aria-live="polite"></span></div>
+      <label for="addFlamegraph" style="display:flex;gap:8px;align-items:center;justify-content:flex-start;margin-top:10px;color:#cbd5e1;font-size:14px;">
+        <input id="addFlamegraph" type="checkbox" style="accent-color:#3b82f6">
+        <span style="font-weight:600;">Add flamegraph</span>
+      </label>
     </section>
 
     <section class="panel" aria-label="Link history">
@@ -91,32 +95,7 @@
   const status = document.getElementById('status');
   const historyEl = document.getElementById('history');
   const clearBtn = document.getElementById('clear');
-
-  // 3a) Flamegraph toggle
-  const flameLabel = document.createElement('label');
-  flameLabel.className = 'row';
-  flameLabel.style.justifyContent = 'center';
-  flameLabel.style.marginTop = '12px';
-  flameLabel.style.fontSize = '14px';
-  flameLabel.style.color = '#cbd5e1';
-  flameLabel.style.gap = '8px';
-  flameLabel.style.alignItems = 'center';
-
-  const flameCheckbox = document.createElement('input');
-  flameCheckbox.type = 'checkbox';
-  flameCheckbox.id = 'addFlamegraph';
-  flameCheckbox.style.accentColor = '#3b82f6';
-  flameCheckbox.setAttribute('aria-label', 'Add flamegraph outputs');
-
-  const flameText = document.createElement('span');
-  flameText.textContent = 'Add flamegraph';
-  flameText.style.fontWeight = '600';
-
-  flameLabel.append(flameCheckbox, flameText);
-
-  // insert checkbox below buttons
-  const uploadPanel = document.querySelector('.panel');
-  uploadPanel.appendChild(flameLabel);
+  const flameCheckbox = document.getElementById('addFlamegraph');
 
   // === Link history on the right ===
   function loadHistory(){
