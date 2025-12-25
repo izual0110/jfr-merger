@@ -25,7 +25,7 @@
     progress{width:100%;height:10px}
     .history{border:2px dashed #334155;border-radius:14px;padding:12px;min-height:360px}
     .history ol{margin:8px 0 0;padding-left:0px;max-height:420px;overflow:auto}
-    .history li{display:grid;grid-template-columns:10fr 1fr 1fr 1fr;gap:8px;align-items:start}
+    .history li{display:grid;grid-template-columns:12fr 2fr 1fr 1fr;gap:8px;align-items:start}
     .history li a{word-break:break-word;text-decoration:none}
     .history li a:hover{text-decoration:underline}
     .history-name{cursor:text;min-width:0;display:inline-flex;align-items:center;gap:6px}
@@ -47,13 +47,13 @@
           <button type="button" id="send">Send files</button>
         </div>
       </div>
-
-      <ul id="list" aria-live="polite"></ul>
-      <div class="row"><progress id="prog" max="100" value="0" hidden></progress><span id="status" aria-live="polite"></span></div>
       <label for="addFlamegraph" style="display:flex;gap:8px;align-items:center;justify-content:flex-start;margin-top:10px;color:#cbd5e1;font-size:14px;">
         <input id="addFlamegraph" type="checkbox" style="accent-color:#3b82f6">
         <span style="font-weight:600;">Add flamegraph</span>
       </label>
+
+      <ul id="list" aria-live="polite"></ul>
+      <div class="row"><progress id="prog" max="100" value="0" hidden></progress><span id="status" aria-live="polite"></span></div>
     </section>
 
     <section class="panel" aria-label="Link history">
@@ -287,17 +287,17 @@
 
       if(item.flame){
         const sep = document.createElement('span');
-        sep.textContent = '|';
+        sep.textContent = 'flame graphs ⟶';
         sep.style.color = '#475569';
         const f0 = document.createElement('a');
         f0.href = '/api/convertor/' + item.uuid + '-flame';
-        f0.target = '_blank'; f0.rel = 'noopener'; f0.textContent = 'flame';
+        f0.target = '_blank'; f0.rel = 'noopener'; f0.textContent = 'flamegraph';
         const f1 = document.createElement('a');
         f1.href = '/api/convertor/' + item.uuid + '-flame-cpu';
-        f1.target = '_blank'; f1.rel = 'noopener'; f1.textContent = 'fcpu';
+        f1.target = '_blank'; f1.rel = 'noopener'; f1.textContent = 'cpu';
         const f2 = document.createElement('a');
         f2.href = '/api/convertor/' + item.uuid + '-flame-alloc';
-        f2.target = '_blank'; f2.rel = 'noopener'; f2.textContent = 'falloc';
+        f2.target = '_blank'; f2.rel = 'noopener'; f2.textContent = 'alloc';
         li.append(sep, f0, f1, f2);
       }
 
