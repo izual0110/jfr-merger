@@ -1,6 +1,6 @@
 (ns jfr.service
   (:import (java.util UUID)
-           (one.convert JfrToHeatmap Arguments)
+           (one.convert JfrToHeatmap JfrToFlame Arguments)
            (java.io ByteArrayOutputStream)
            (one.jfr JfrReader))
   (:require [clojure.java.io :as io]
@@ -11,33 +11,31 @@
 
 (defn- get-temp-dir [] (env/temp-dir))
 
-(def ^:private valid-output-types #{"heatmap" "html"})
+(defn- convert-with
+  "Runs the provided converter constructor against a JFR input and returns the produced bytes."
+  [converter-fn output-type input profile-flag]
+  (let [args (Arguments. (into-array String
+                                     (cond-> ["--output" output-type]
+                                       profile-flag (conj profile-flag)
+                                       true (conj input))))
+        baos (ByteArrayOutputStream.)]
+    (with-open [jfr (JfrReader. input)]
+      (let [converter (converter-fn jfr args)]
+        (.convert converter)
+        (.dump converter baos)))
+    (.toByteArray baos)))
 
-(defn convert-to-bytes
-  "Converts a JFR input file to the requested representation (heatmap or flamegraph HTML).
+(defn convert-heatmap
+  "Converts a JFR input file to a heatmap (optionally cpu/alloc scoped)."
+  ([input] (convert-heatmap input nil))
+  ([input profile-flag]
+   (convert-with #(JfrToHeatmap. %1 %2) "heatmap" input profile-flag)))
 
-  `output-type` must be either \"heatmap\" or \"html\". Optional `profile-flag` values
-  (e.g. `\"--cpu\"`, `\"--alloc\"`) are passed through to the converter.
-  Returns a byte array with the rendered artifact."
-  ([input output-type]
-   (convert-to-bytes input output-type nil))
-  ([input output-type profile-flag]
-   (when-not (valid-output-types output-type)
-     (throw (ex-info (str "Unsupported output type: " output-type)
-                     {:supported valid-output-types
-                      :output-type output-type})))
-   (let [args (Arguments. (into-array String
-                                      (cond-> ["--output" output-type]
-                                        (and profile-flag (not (str/blank? profile-flag)))
-                                        (conj profile-flag)
-                                        true
-                                        (conj input))))
-         baos (ByteArrayOutputStream.)]
-     (with-open [jfr (JfrReader. input)]
-       (let [converter (JfrToHeatmap. jfr args)]
-         (.convert converter)
-         (.dump converter baos)))
-     (.toByteArray baos))))
+(defn convert-flamegraph
+  "Converts a JFR input file to a flamegraph HTML (optionally cpu/alloc scoped)."
+  ([input] (convert-flamegraph input nil))
+  ([input profile-flag]
+   (convert-with #(JfrToFlame. %1 %2) "flamegraph" input profile-flag)))
 
 (defn jfr-stats
   [jfr-path]
@@ -51,23 +49,27 @@
        :duration (int (/ (.durationNanos jfr) 1000000))
        :event-types grouped})))
 
-(defn generate-heatmap [{:keys [params]}]
+(defn generate-artifacts [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
         temp-dir (get-temp-dir)
         merged-path (str temp-dir "/" uuid ".jfr")
         files (->> (get params "files")
                    utils/normalize-vector
-                   (filter #(and (map? %) (contains? % :tempfile))))]
+                   (filter #(and (map? %) (contains? % :tempfile))))
+        add-flame? (boolean (#{"true" "on" "1"} (-> (get params "addFlamegraph" "")
+                                                    str/lower-case)))]
     (io/make-parents merged-path)
     (println "UUID:" uuid "\n\t\tFiles to merge:" files)
     (with-open [out (io/output-stream merged-path)]
       (doseq [file files]
         (with-open [in (io/input-stream (:tempfile file))]
           (io/copy in out))))
-    (doseq [output-type ["heatmap" "html"]
-            {:keys [suffix flag]} [{:suffix "" :flag nil}
+    (doseq [{:keys [suffix flag]} [{:suffix "" :flag nil}
                                    {:suffix "-cpu" :flag "--cpu"}
                                    {:suffix "-alloc" :flag "--alloc"}]]
-      (->> (convert-to-bytes merged-path output-type flag)
-           (storage/save-bytes (str uuid suffix (when (= output-type "html") "-html")))))
-    [uuid  (jfr-stats merged-path)]))
+      (->> (convert-heatmap merged-path flag)
+           (storage/save-bytes (str uuid suffix)))
+      (when add-flame?
+        (->> (convert-flamegraph merged-path flag)
+             (storage/save-bytes (str uuid "-flame" suffix)))))
+    [uuid (jfr-stats merged-path) add-flame?]))

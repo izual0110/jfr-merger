@@ -26,12 +26,11 @@
 
 (defroutes handlers
   (GET "/" [] index)
-  (POST "/api/heatmap" req (let [[uuid stats] (service/generate-heatmap req)] 
-                             {:status 200 
-                              :headers {"Content-Type" "application/json"} 
-                              :body (json/write-str {:uuid uuid :stats stats})}))
-  (GET "/api/heatmap/:uuid" [uuid] (get-artifact uuid "text/html"))
-  (GET "/api/flamegraph/:uuid" [uuid] (get-artifact uuid "text/html"))
+  (POST "/api/convertor" req (let [[uuid stats add-flame?] (service/generate-artifacts req)] 
+                               {:status 200 
+                                :headers {"Content-Type" "application/json"} 
+                                :body (json/write-str {:uuid uuid :stats stats :flame add-flame?})}))
+  (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
   (GET "/api/storage/stats" [] {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str (storage/stats))})

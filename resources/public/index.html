@@ -77,7 +77,7 @@
 (() => {
   'use strict';
   // 1) Settings. Set your real endpoint here:
-  const UPLOAD_URL = '/api/heatmap';
+  const UPLOAD_URL = '/api/convertor';
   // 2) Keys in localStorage:
   const LS_KEY = 'htmlLinksHistory';
 
@@ -92,64 +92,31 @@
   const historyEl = document.getElementById('history');
   const clearBtn = document.getElementById('clear');
 
-  // 3a) View radio buttons
-  const viewSelector = document.createElement('div');
-  viewSelector.className = 'row';
-  viewSelector.style.justifyContent = 'center';
-  viewSelector.style.marginTop = '12px';
-  viewSelector.style.fontSize = '14px';
-  viewSelector.style.color = '#cbd5e1';
+  // 3a) Flamegraph toggle
+  const flameLabel = document.createElement('label');
+  flameLabel.className = 'row';
+  flameLabel.style.justifyContent = 'center';
+  flameLabel.style.marginTop = '12px';
+  flameLabel.style.fontSize = '14px';
+  flameLabel.style.color = '#cbd5e1';
+  flameLabel.style.gap = '8px';
+  flameLabel.style.alignItems = 'center';
 
-  const viewLabel = document.createElement('span');
-  viewLabel.textContent = 'View:';
-  viewLabel.style.marginRight = '8px';
-  viewLabel.style.fontWeight = '600';
+  const flameCheckbox = document.createElement('input');
+  flameCheckbox.type = 'checkbox';
+  flameCheckbox.id = 'addFlamegraph';
+  flameCheckbox.style.accentColor = '#3b82f6';
+  flameCheckbox.setAttribute('aria-label', 'Add flamegraph outputs');
 
-  const radioGroup = document.createElement('div');
-  radioGroup.style.display = 'inline-flex';
-  radioGroup.style.gap = '12px';
-  radioGroup.style.alignItems = 'center';
+  const flameText = document.createElement('span');
+  flameText.textContent = 'Add flamegraph';
+  flameText.style.fontWeight = '600';
 
-  let selectedView = 'heatmap';
+  flameLabel.append(flameCheckbox, flameText);
 
-  const makeRadio = (value, labelText) => {
-    const wrapper = document.createElement('label');
-    wrapper.style.display = 'inline-flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.gap = '6px';
-    wrapper.style.cursor = 'pointer';
-
-    const input = document.createElement('input');
-    input.type = 'radio';
-    input.name = 'viewMode';
-    input.value = value;
-    input.checked = selectedView === value;
-    input.style.accentColor = '#3b82f6';
-    input.setAttribute('aria-label', `Use ${labelText} view`);
-
-    const text = document.createElement('span');
-    text.textContent = labelText;
-
-    input.addEventListener('change', () => {
-      if(input.checked){
-        selectedView = value;
-      }
-    });
-
-    wrapper.append(input, text);
-    return wrapper;
-  };
-
-  radioGroup.append(
-    makeRadio('heatmap', 'Heatmap'),
-    makeRadio('html', 'Flamegraph')
-  );
-
-  viewSelector.append(viewLabel, radioGroup);
-
-  // insert selector below buttons
+  // insert checkbox below buttons
   const uploadPanel = document.querySelector('.panel');
-  uploadPanel.appendChild(viewSelector);
+  uploadPanel.appendChild(flameLabel);
 
   // === Link history on the right ===
   function loadHistory(){
@@ -160,7 +127,8 @@
         if(!item || typeof item !== 'object' || !item.uuid) return null;
         return {
           ...item,
-          name: typeof item.name === 'string' ? item.name : ''
+          name: typeof item.name === 'string' ? item.name : '',
+          flame: Boolean(item.flame)
         };
       }).filter(Boolean);
     }catch{
@@ -184,7 +152,8 @@
     } else {
       const entry = {
         ...obj,
-        name: typeof obj.name === 'string' ? obj.name : ''
+        name: typeof obj.name === 'string' ? obj.name : '',
+        flame: Boolean(obj.flame)
       };
       arr.unshift(entry);
     }
@@ -327,15 +296,32 @@
       uuidSpan.append(infoIcon, detailsIcon, nameSpan);
 
       const a0 = document.createElement('a');
-      a0.href = '/api/heatmap/' + item.uuid;
-      a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = item.view === 'html' ? 'html' : "all";
+      a0.href = '/api/convertor/' + item.uuid;
+      a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = "all";
       const a1 = document.createElement('a');
-      a1.href = '/api/heatmap/' + item.uuid+"-cpu";
+      a1.href = '/api/convertor/' + item.uuid+"-cpu";
       a1.target = '_blank'; a1.rel = 'noopener'; a1.textContent = "cpu";
       const a2 = document.createElement('a');
-      a2.href = '/api/heatmap/' + item.uuid+"-alloc";
+      a2.href = '/api/convertor/' + item.uuid+"-alloc";
       a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = "alloc";
       li.append(uuidSpan, a0, a1, a2);
+
+      if(item.flame){
+        const sep = document.createElement('span');
+        sep.textContent = '|';
+        sep.style.color = '#475569';
+        const f0 = document.createElement('a');
+        f0.href = '/api/convertor/' + item.uuid + '-flame';
+        f0.target = '_blank'; f0.rel = 'noopener'; f0.textContent = 'flame';
+        const f1 = document.createElement('a');
+        f1.href = '/api/convertor/' + item.uuid + '-flame-cpu';
+        f1.target = '_blank'; f1.rel = 'noopener'; f1.textContent = 'flame-cpu';
+        const f2 = document.createElement('a');
+        f2.href = '/api/convertor/' + item.uuid + '-flame-alloc';
+        f2.target = '_blank'; f2.rel = 'noopener'; f2.textContent = 'flame-alloc';
+        li.append(sep, f0, f1, f2);
+      }
+
       historyEl.append(li);
     });
   }
@@ -389,6 +375,7 @@
   async function sendFiles(){
     if(!fileInput.files.length){ alert('Please select files first.'); return; }
     const currentBatch = lastSelectedBatchId; // remember what exactly we send
+    const addFlamegraph = flameCheckbox.checked;
     try{
       status.textContent = 'Uploading…';
       prog.hidden = false;
@@ -396,6 +383,7 @@
 
       const fd = new FormData();
       [...fileInput.files].forEach(f => fd.append('files', f, f.name));
+      fd.append('addFlamegraph', addFlamegraph ? 'true' : 'false');
 
       const resp = await fetch(UPLOAD_URL, {method:'POST', body: fd});
       clearInterval(t); prog.value = 100;
@@ -406,7 +394,7 @@
         status.textContent = 'Uploaded, but the server did not return a valid uuid.';
       } else {
         status.textContent = 'Done';
-        addToHistory(result);
+        addToHistory({ ...result, flame: Boolean(result.flame) });
       }
 
       // Do not remove current items immediately — only after 10 seconds
