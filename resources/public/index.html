@@ -297,7 +297,7 @@
 
       const a0 = document.createElement('a');
       a0.href = '/api/convertor/' + item.uuid;
-      a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = "all";
+      a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = "heatmap";
       const a1 = document.createElement('a');
       a1.href = '/api/convertor/' + item.uuid+"-cpu";
       a1.target = '_blank'; a1.rel = 'noopener'; a1.textContent = "cpu";
@@ -315,10 +315,10 @@
         f0.target = '_blank'; f0.rel = 'noopener'; f0.textContent = 'flame';
         const f1 = document.createElement('a');
         f1.href = '/api/convertor/' + item.uuid + '-flame-cpu';
-        f1.target = '_blank'; f1.rel = 'noopener'; f1.textContent = 'flame-cpu';
+        f1.target = '_blank'; f1.rel = 'noopener'; f1.textContent = 'fcpu';
         const f2 = document.createElement('a');
         f2.href = '/api/convertor/' + item.uuid + '-flame-alloc';
-        f2.target = '_blank'; f2.rel = 'noopener'; f2.textContent = 'flame-alloc';
+        f2.target = '_blank'; f2.rel = 'noopener'; f2.textContent = 'falloc';
         li.append(sep, f0, f1, f2);
       }
 
