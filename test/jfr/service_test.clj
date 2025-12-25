@@ -4,11 +4,11 @@
 
 (deftest convert-heatmap-missing-file
   (is (thrown? java.nio.file.NoSuchFileException
-               (service/convert-heatmap "missing.jfr"))))
+               (service/convert-heatmap "missing.jfr" nil))))
 
 (deftest convert-flamegraph-missing-file
   (is (thrown? java.nio.file.NoSuchFileException
-               (service/convert-flamegraph "missing.jfr"))))
+               (service/convert-flamegraph "missing.jfr" nil))))
 
 (deftest jfr-stats-missing-file
   (is (thrown? java.nio.file.NoSuchFileException
