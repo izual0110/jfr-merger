@@ -2,7 +2,7 @@
   (:require
    [jfr.core :as core]
    [jfr.detector.detector :as detector]
-   [jfr.detector.report :as report] 
+   [jfr.detector.report :as report]
    [hiccup2.core :as h])
   (:import [java.lang NullPointerException]))
 

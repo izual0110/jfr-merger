@@ -17,22 +17,22 @@
    :headers {"Location" "/index.html"}
    :body    (str (h/html [:a {:href "/index.html"} "index"]))})
 
-(defn get-heatmap [uuid]
+(defn get-artifact [uuid content-type]
   (let [data (storage/load-bytes uuid)]
     (if data
       {:status 200
-       :headers {"Content-Type" "text/html"}
+       :headers {"Content-Type" content-type}
        :body data}
       {:status 404
-       :body "Heatmap not found"})))
+       :body "Artifact not found"})))
 
 (defroutes handlers
   (GET "/" [] index)
-  (POST "/api/heatmap" req (let [{:keys [uuid stats]} (service/generate-heatmap req)]
-                             {:status 200
-                              :headers {"Content-Type" "application/json"}
-                              :body (json/write-str {:uuid uuid :stats stats})}))
-  (GET "/api/heatmap/:uuid" [uuid] (get-heatmap uuid))
+  (POST "/api/convertor" req (let [{:keys [uuid stats add-flame?]} (service/generate-artifacts req)]
+                               {:status 200
+                                :headers {"Content-Type" "application/json"}
+                                :body (json/write-str {:uuid uuid :stats stats :flame add-flame?})}))
+  (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
   (GET "/api/detector-raw/:uuid" [uuid]
        (if-let [result (service/detector-result uuid)]
          {:status 200
@@ -41,7 +41,7 @@
          {:status 404
           :headers {"Content-Type" "application/json"}
           :body (json/write-str {:error "Detector result not found"})}))
-  
+
   (GET "/api/detector/:uuid" [uuid]
     (if-let [result (service/detector-result uuid)]
       {:status 200
@@ -50,7 +50,7 @@
       {:status 404
        :headers {"Content-Type" "application/json"}
        :body (json/write-str {:error "Detector result not found"})}))
-  
+
   (GET "/api/storage/stats" [] {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str (storage/stats))})
