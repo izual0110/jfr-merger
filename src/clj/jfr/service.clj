@@ -6,18 +6,17 @@
   (:require [clojure.java.io :as io]
             [jfr.storage :as storage]
             [jfr.utils :as utils]
-            [jfr.environ :as env]
-            [clojure.string :as str]))
+            [jfr.environ :as env]))
 
 (defn- get-temp-dir [] (env/temp-dir))
 
 (defn- convert-with
   "Runs the provided converter constructor against a JFR input and returns the produced bytes."
-  [converter-fn output-type input profile-flag]
+  [converter-fn input profile-flag]
   (let [args (Arguments. (into-array String
-                                     (cond-> ["--output" output-type]
+                                     (cond-> []
                                        profile-flag (conj profile-flag)
-                                       true (conj input))))
+                                       :always (conj input))))
         baos (ByteArrayOutputStream.)]
     (with-open [jfr (JfrReader. input)]
       (let [converter (converter-fn jfr args)]
@@ -27,15 +26,13 @@
 
 (defn convert-heatmap
   "Converts a JFR input file to a heatmap (optionally cpu/alloc scoped)."
-  ([input] (convert-heatmap input nil))
-  ([input profile-flag]
-   (convert-with #(JfrToHeatmap. %1 %2) "heatmap" input profile-flag)))
+  [input profile-flag]
+  (convert-with #(JfrToHeatmap. %1 %2) input profile-flag))
 
 (defn convert-flamegraph
   "Converts a JFR input file to a flamegraph HTML (optionally cpu/alloc scoped)."
-  ([input] (convert-flamegraph input nil))
-  ([input profile-flag]
-   (convert-with #(JfrToFlame. %1 %2) "flamegraph" input profile-flag)))
+  [input profile-flag]
+  (convert-with #(JfrToFlame. %1 %2) input profile-flag))
 
 (defn jfr-stats
   [jfr-path]
@@ -56,10 +53,9 @@
         files (->> (get params "files")
                    utils/normalize-vector
                    (filter #(and (map? %) (contains? % :tempfile))))
-        add-flame? (boolean (#{"true" "on" "1"} (-> (get params "addFlamegraph" "")
-                                                    str/lower-case)))]
+        add-flame? (= "true" (get params "addFlamegraph"))]
     (io/make-parents merged-path)
-    (println "UUID:" uuid "\n\t\tFiles to merge:" files)
+    (println "UUID:" uuid (if add-flame? "with flamegraph" "without flamegraph") "\n\t\tFiles to merge:" files)
     (with-open [out (io/output-stream merged-path)]
       (doseq [file files]
         (with-open [in (io/input-stream (:tempfile file))]
