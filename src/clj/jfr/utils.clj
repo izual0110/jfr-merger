@@ -1,12 +1,20 @@
-(ns  jfr.utils
+(ns jfr.utils
   (:import (java.time Instant ZonedDateTime ZoneOffset)))
 
-(defn if-nil [f & ns]
-  (let [v (f)]
-    (cond
-      (not (nil? v)) v
-      (some? ns) (apply if-nil ns)
-      :else v)))
+(defn if-nil
+  "Invokes each thunk in order and returns the first non-nil result.
+  Returns nil when every thunk yields nil."
+  ([f]
+   (f))
+  ([f & fs]
+   (loop [current f
+          remaining fs]
+     (let [value (current)]
+       (if (nil? value)
+         (if-let [next-fn (first remaining)]
+           (recur next-fn (rest remaining))
+           nil)
+         value)))))
 
 (defn normalize-vector [v]
   (if (vector? v) v [v]))
