@@ -57,7 +57,7 @@ jobs:
 
       - name: Check Clojure cache after build
         run: |
-          if find ~/.m2 -path '*org/clojure/clojure/1.12.3/clojure-1.12.3.pom' -print -quit | grep -q .; then
+          if find ~/.m2 -path '*org/clojure/clojure/1.12.4/clojure-1.12.4.pom' -print -quit | grep -q .; then
             echo "org/clojure dependency cached"
           else
             echo "org/clojure dependency still missing"
