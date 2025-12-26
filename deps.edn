@@ -1,6 +1,6 @@
 {:paths ["src/clj" "resources"] 
 
- :deps {org.clojure/clojure {:mvn/version "1.12.3"}
+ :deps {org.clojure/clojure {:mvn/version "1.12.4"}
         http-kit/http-kit {:mvn/version "2.8.1"}
         compojure/compojure {:mvn/version "1.7.2"}
         one/convert {:local/root "lib/jfr-converter.jar"}
