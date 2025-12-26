@@ -3,7 +3,7 @@ RUN dnf install -y java-25-openjdk-headless tar gzip && dnf clean all && rm -rf 
 
 #only for jfr-merger-ci
 FROM base AS clojure
-RUN curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.3.1577/linux-install.sh && \
+RUN curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.4.1582/linux-install.sh && \
     chmod +x linux-install.sh && \
     mkdir -p /app/clojure && \
     ./linux-install.sh -p /app/clojure && \
