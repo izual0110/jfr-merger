@@ -51,9 +51,9 @@ jobs:
             -t jfr-merger-ci .
           docker run --rm \
             -v $HOME/.m2:/root/.m2 \
-            -v $PWD:/tmp/incoming \
+            -v $PWD:/tmp/sources \
             jfr-merger-ci \
-            /bin/bash -c "cp -r /tmp/incoming/* /app/ && /app/clojure/bin/clojure -M:test"
+            /bin/bash -c "cp -r /tmp/sources/* /app/ && /app/clojure/bin/clojure -M:test"
 
       - name: Check Clojure cache after build
         run: |
