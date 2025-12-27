@@ -96,6 +96,68 @@
   const historyEl = document.getElementById('history');
   const clearBtn = document.getElementById('clear');
   const flameCheckbox = document.getElementById('addFlamegraph');
+  const STATS_TITLE_MAX = 400;
+  const setStatus = (txt = '') => { status.textContent = txt; };
+  const resetProgress = () => { prog.hidden = true; prog.value = 0; };
+  const stringifyStats = (stats) => {
+    try{ return JSON.stringify(stats, null, 2) || ''; }
+    catch{ return ''; }
+  };
+  const trimmedStatsTitle = (stats) => {
+    const str = stringifyStats(stats);
+    return str.slice(0, STATS_TITLE_MAX) + (str.length > STATS_TITLE_MAX ? '…' : '');
+  };
+  const createLink = (href, label) => {
+    const a = document.createElement('a');
+    a.href = href;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = label;
+    return a;
+  };
+  const createIcon = (symbol, color, title, handler) => {
+    const span = document.createElement('span');
+    span.textContent = symbol;
+    span.style.color = color;
+    span.style.fontSize = '20px';
+    span.style.verticalAlign = 'middle';
+    span.style.cursor = 'pointer';
+    span.title = title || '';
+    span.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handler?.();
+    });
+    return span;
+  };
+  const createLinks = (base, entries) => entries.map(([suffix, label]) => createLink(base + suffix, label));
+  const createHistoryNameSpan = (item, statsString) => {
+    const nameSpan = document.createElement('span');
+    const displayName = (item.name && item.name.trim()) ? item.name.trim() : item.uuid;
+    nameSpan.textContent = displayName;
+    nameSpan.className = 'history-name';
+    nameSpan.dataset.uuid = item.uuid;
+    nameSpan.spellcheck = false;
+    nameSpan.tabIndex = 0;
+    nameSpan.title = statsString;
+    nameSpan.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      beginNameEdit(nameSpan);
+    });
+    nameSpan.addEventListener('keydown', (e) => {
+      if(nameSpan.dataset.editing !== '1') return;
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        finishNameEdit(item.uuid, nameSpan, true, {triggerBlur: true});
+      } else if(e.key === 'Escape'){
+        e.preventDefault();
+        finishNameEdit(item.uuid, nameSpan, false, {triggerBlur: true});
+      }
+    });
+    nameSpan.addEventListener('blur', () => {
+      finishNameEdit(item.uuid, nameSpan, true);
+    });
+    return nameSpan;
+  };
 
   // === Link history on the right ===
   function loadHistory(){
@@ -139,6 +201,25 @@
     saveHistory(arr);
     renderHistory();
   }
+  function normalizeConvertorPayload(raw){
+    const payload = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if(!payload || typeof payload !== 'object') throw new Error('Payload must be an object or JSON string');
+    if(!payload.uuid) throw new Error('Payload must include a uuid field');
+    return {
+      uuid: String(payload.uuid),
+      stats: payload.stats,
+      flame: Boolean(payload.flame),
+      name: typeof payload.name === 'string' ? payload.name : ''
+    };
+  }
+  function applyConvertorResponse(rawPayload, {statusMessage = 'Simulated response applied.'} = {}){
+    const normalized = normalizeConvertorPayload(rawPayload);
+    addToHistory(normalized);
+    setStatus(statusMessage);
+    resetProgress();
+    return normalized;
+  }
+  window.applyConvertorResponse = applyConvertorResponse;
   function clearHistory(){ saveHistory([]); renderHistory(); }
   function persistHistoryName(uuid, newName){
     const arr = loadHistory();
@@ -194,115 +275,59 @@
       historyEl.append(li);
       return;
     }
+    const frag = document.createDocumentFragment();
     arr.forEach(item => {
       const li = document.createElement('li');
 
       const uuidSpan = document.createElement('span');
-      const statsString = JSON.stringify(item.stats, null, 2) || '';
-      uuidSpan.title = statsString.slice(0, 400) + (statsString.length > 400 ? '…' : '');
+      const statsString = trimmedStatsTitle(item.stats);
+      uuidSpan.title = statsString;
       uuidSpan.style.fontSize = '16px';
       uuidSpan.style.fontWeight = 'bold';
       uuidSpan.style.display = 'inline-flex';
       uuidSpan.style.alignItems = 'center';
       uuidSpan.style.gap = '4px';
 
-      const infoIcon = document.createElement('span');
-      infoIcon.textContent = 'ⓘ';
-      infoIcon.style.color = '#3b82f6';
-      infoIcon.style.fontSize = '20px';
-      infoIcon.style.verticalAlign = 'middle';
-      infoIcon.style.cursor = 'pointer';
-      infoIcon.style.color = 'rgb(45, 212, 191)';
-
-      infoIcon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showStatsModal(item.stats, `Statistics`);
+      const infoIcon = createIcon('ⓘ', 'rgb(96, 165, 250)', 'Show statistics', () => {
+        showStatsModal(item.stats, 'Statistics', statsString);
       });
-
-      const detailsIcon = document.createElement('span');
-      detailsIcon.textContent = 'Ⓓ';
-      detailsIcon.style.color = '#3b82f6';
-      detailsIcon.style.fontSize = '20px';
-      detailsIcon.style.verticalAlign = 'middle';
-      detailsIcon.style.cursor = 'pointer';
-      detailsIcon.style.paddingRight = '5px';
-      infoIcon.style.color = 'rgb(96, 165, 250)';
-
-      detailsIcon.addEventListener('click', async (e) => {
-        e.stopPropagation();
+      const detailsIcon = createIcon('Ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
         try {
           const response = await fetch("/api/detector/" + item.uuid);
-
-          if (!response.ok) {
-            throw new Error("HTTP " + response.status);
-          }
-
-          showStatsModal(await response.json(), `Recommendations`);
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          showStatsModal(await response.json(), 'Recommendations');
         } catch (err) {
-          showStatsModal(err.toString(), `Recommendations`);
+          showStatsModal(err.toString(), 'Recommendations');
           console.error(err);
         }
       });
+      detailsIcon.style.paddingRight = '5px';
 
-
-      const nameSpan = document.createElement('span');
-      const displayName = (item.name && item.name.trim()) ? item.name.trim() : item.uuid;
-      nameSpan.textContent = displayName;
-      nameSpan.className = 'history-name';
-      nameSpan.dataset.uuid = item.uuid;
-      nameSpan.spellcheck = false;
-      nameSpan.tabIndex = 0;
-      nameSpan.title = statsString.slice(0, 400) + (statsString.length > 400 ? '…' : '');
-
-      nameSpan.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        beginNameEdit(nameSpan);
-      });
-      nameSpan.addEventListener('keydown', (e) => {
-        if(nameSpan.dataset.editing !== '1') return;
-        if(e.key === 'Enter'){
-          e.preventDefault();
-          finishNameEdit(item.uuid, nameSpan, true, {triggerBlur: true});
-        } else if(e.key === 'Escape'){
-          e.preventDefault();
-          finishNameEdit(item.uuid, nameSpan, false, {triggerBlur: true});
-        }
-      });
-      nameSpan.addEventListener('blur', () => {
-        finishNameEdit(item.uuid, nameSpan, true);
-      });
-
+      const nameSpan = createHistoryNameSpan(item, statsString);
       uuidSpan.append(infoIcon, detailsIcon, nameSpan);
 
-      const a0 = document.createElement('a');
-      a0.href = '/api/convertor/' + item.uuid;
-      a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = "heatmap";
-      const a1 = document.createElement('a');
-      a1.href = '/api/convertor/' + item.uuid+"-cpu";
-      a1.target = '_blank'; a1.rel = 'noopener'; a1.textContent = "cpu";
-      const a2 = document.createElement('a');
-      a2.href = '/api/convertor/' + item.uuid+"-alloc";
-      a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = "alloc";
-      li.append(uuidSpan, a0, a1, a2);
+      const baseLinks = createLinks('/api/convertor/' + item.uuid, [
+        ['', 'heatmap'],
+        ['-cpu', 'cpu'],
+        ['-alloc', 'alloc']
+      ]);
+      li.append(uuidSpan, ...baseLinks);
 
       if(item.flame){
         const sep = document.createElement('span');
         sep.textContent = 'flame graphs ⟶';
         sep.style.color = '#475569';
-        const f0 = document.createElement('a');
-        f0.href = '/api/convertor/' + item.uuid + '-flame';
-        f0.target = '_blank'; f0.rel = 'noopener'; f0.textContent = 'flamegraph';
-        const f1 = document.createElement('a');
-        f1.href = '/api/convertor/' + item.uuid + '-flame-cpu';
-        f1.target = '_blank'; f1.rel = 'noopener'; f1.textContent = 'cpu';
-        const f2 = document.createElement('a');
-        f2.href = '/api/convertor/' + item.uuid + '-flame-alloc';
-        f2.target = '_blank'; f2.rel = 'noopener'; f2.textContent = 'alloc';
-        li.append(sep, f0, f1, f2);
+        const flameLinks = createLinks('/api/convertor/' + item.uuid, [
+          ['-flame', 'flamegraph'],
+          ['-flame-cpu', 'cpu'],
+          ['-flame-alloc', 'alloc']
+        ]);
+        li.append(sep, ...flameLinks);
       }
 
-      historyEl.append(li);
+      frag.append(li);
     });
+    historyEl.append(frag);
   }
 
   // === File handling on the left ===
@@ -347,7 +372,7 @@
     const dt = new DataTransfer();
     fileInput.files = dt.files;
     // leave progress and status: status will show "Done", hide progress
-    prog.value = 0; prog.hidden = true;
+    resetProgress();
   }
 
   // Send files via fetch (async)
@@ -356,7 +381,7 @@
     const currentBatch = lastSelectedBatchId; // remember what exactly we send
     const addFlamegraph = flameCheckbox.checked;
     try{
-      status.textContent = 'Uploading…';
+      setStatus('Uploading…');
       prog.hidden = false;
       let fake = 0; const t = setInterval(()=>{fake=Math.min(99, fake+3); prog.value=fake;}, 120);
 
@@ -370,18 +395,17 @@
 
       const result = await resp.json().catch(()=>null);
       if(!result || !result.uuid){
-        status.textContent = 'Uploaded, but the server did not return a valid uuid.';
+        setStatus('Uploaded, but the server did not return a valid uuid.');
       } else {
-        status.textContent = 'Done';
-        addToHistory({ ...result, flame: Boolean(result.flame) });
+        applyConvertorResponse(result, {statusMessage: 'Done'});
       }
 
       // Do not remove current items immediately — only after 10 seconds
       scheduleBatchClear(currentBatch, 10000);
       softResetAfterSend();
     } catch(err){
-      status.textContent = 'Error: ' + err.message;
-      prog.hidden = true;
+      setStatus('Error: ' + err.message);
+      resetProgress();
     }
   }
 
@@ -412,10 +436,11 @@ function closeStatsModal(){
   statsModal.style.display = 'none';
 }
 
-function showStatsModal(stats, uuid){
+function showStatsModal(stats, uuid, statsString){
   statsModal.style.display = 'flex';
   document.getElementById('statsUuid').textContent = uuid;
-  document.getElementById('statsContent').textContent = JSON.stringify(stats, null, 2);
+  const content = statsString || (typeof stringifyStats === 'function' ? stringifyStats(stats) : JSON.stringify(stats, null, 2));
+  document.getElementById('statsContent').textContent = content;
 }
 
 closeStatsButton.onclick = closeStatsModal;
