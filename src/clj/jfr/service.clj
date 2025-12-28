@@ -118,4 +118,5 @@
       (when add-flame?
         (->> (convert-flamegraph merged-path flag)
              (storage/save-bytes (str uuid "-flame" suffix)))))
-    [uuid (jfr-stats merged-path) (schedule-detector! uuid merged-path) add-flame?]))
+    (schedule-detector! uuid merged-path)
+    [uuid (jfr-stats merged-path) add-flame?]))

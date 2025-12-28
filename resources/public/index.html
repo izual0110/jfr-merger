@@ -328,7 +328,7 @@
         try {
           const response = await fetch("/api/detector/" + item.uuid);
           if (!response.ok) throw new Error("HTTP " + response.status);
-          showStatsModal(await response.json(), 'Recommendations');
+          showStatsModal(await response.text(), 'Recommendations');
         } catch (err) {
           showStatsModal(err.toString(), 'Recommendations');
           console.error(err);
