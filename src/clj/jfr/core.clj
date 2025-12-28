@@ -1,7 +1,9 @@
 (ns jfr.core
-  (:require 
+  (:require
    [jfr.storage :as storage]
    [jfr.service :as service]
+   [jfr.detector.worker :as detector-worker]
+   [jfr.detector.report :as report]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [compojure.route :refer [resources]]
    [compojure.core :refer [defroutes GET POST]]
@@ -26,11 +28,29 @@
 
 (defroutes handlers
   (GET "/" [] index)
-  (POST "/api/convertor" req (let [[uuid stats add-flame?] (service/generate-artifacts req)] 
-                               {:status 200 
-                                :headers {"Content-Type" "application/json"} 
-                                :body (json/write-str {:uuid uuid :stats stats :flame add-flame?})}))
+  (POST "/api/convertor" req (let [[uuid stats add-flame? add-detector?] (service/generate-artifacts req)]
+                               {:status 200
+                                :headers {"Content-Type" "application/json"}
+                                :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})}))
   (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
+  (GET "/api/detector-raw/:uuid" [uuid]
+       (if-let [result (service/detector-result uuid)]
+         {:status 200
+          :headers {"Content-Type" "application/json"}
+          :body (json/write-str result)}
+         {:status 404
+          :headers {"Content-Type" "application/json"}
+          :body (json/write-str {:error "Detector result not found"})}))
+
+  (GET "/api/detector/:uuid" [uuid]
+    (if-let [result (service/detector-result uuid)]
+      {:status 200
+       :headers {"Content-Type" "text/html; charset=utf-8"}
+       :body (str (h/html (report/report-div result)))}
+      {:status 404
+       :headers {"Content-Type" "application/json"}
+       :body (json/write-str {:error "Detector result not found"})}))
+
   (GET "/api/storage/stats" [] {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str (storage/stats))})
@@ -42,6 +62,7 @@
 (defonce server (atom nil))
 
 (defn stop-server []
+  (detector-worker/stop!)
   (storage/destroy)
   (when-not (nil? @server)
     (@server :timeout 100)
@@ -57,6 +78,7 @@
   (println "Hello, World!")
   (println "http://localhost:8080/index.html")
   (storage/init)
+  (detector-worker/start!)
   (reset! server (run-server #'app {:port 8080 :max-body (* 1 1024 1024 1024)})))
 
 
