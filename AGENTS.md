@@ -13,6 +13,7 @@
 1. Install **Java 17+** and the **Clojure CLI tools** (e.g., `brew install clojure/tools/deps` on macOS or follow https://clojure.org/guides/install_clojure for Linux/Windows).
 2. Download async-profiler tooling into `lib/` (see commands in `README.md`). `one/convert` expects `lib/jfr-converter.jar` to exist when you run the service or tests.
 3. Optional but recommended: create `storage/` with subfolders `jfrs/` and `temp/` if you tweak `resources/config.edn`.
+4. **Before running tests**, execute `./prepare-env.sh` to install toolchain prerequisites (rlwrap, Clojure CLI, converters).
 
 ### Helpful commands
 ```bash

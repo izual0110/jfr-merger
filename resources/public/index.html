@@ -18,18 +18,55 @@
     .btns{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
     button,.ghost{padding:10px 14px;border-radius:10px;border:0;background:var(--acc);color:#fff;cursor:pointer}
     .ghost{background:#1f2937;color:var(--fg)}
-    ul{list-style:none;padding:0;margin:12px 0 0;max-height:180px;overflow:auto;border-top:1px solid #223}
-    li{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed #223}
+    ul{list-style:none;padding:0;margin:12px 0 0;overflow:auto}
+    li{display:flex;justify-content:space-between;gap:8px;padding:2px 0;border-bottom:1px dashed #223}
     small{color:var(--mut)}
     .row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
     progress{width:100%;height:10px}
+
     .history{border:2px dashed #334155;border-radius:14px;padding:12px;min-height:360px}
-    .history ol{margin:8px 0 0;padding-left:0px;max-height:420px;overflow:auto}
-    .history li{display:grid;grid-template-columns:12fr 2fr 1fr 1fr;gap:8px;align-items:start}
+    .history ol{margin:8px 0 0;padding-left:0px;max-height:420px}
+    .history li{display:grid;grid-template-columns:12fr 2fr 1fr 1fr;gap:0px;align-items:start}
     .history li a{word-break:break-word;text-decoration:none}
     .history li a:hover{text-decoration:underline}
     .history-name{cursor:text;min-width:0;display:inline-flex;align-items:center;gap:6px}
     .history-name[contenteditable="true"]{outline:1px solid var(--acc);border-radius:4px;padding:0 4px}
+
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:32px;background:rgba(3,6,17,.85);backdrop-filter:blur(6px);z-index:9999}
+    .modal.is-visible{display:flex}
+    .modal__dialog{background:#0f172a;border:1px solid rgba(59,130,246,.25);border-radius:18px;box-shadow:0 20px 60px rgba(2,6,23,.8);max-width:1200px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+    .modal__header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(135deg,rgba(59,130,246,.2),rgba(14,165,233,.05))}
+    .modal__title{margin:0;font-size:18px;font-weight:600;letter-spacing:.01em}
+    .modal__close{border:none;background:rgba(255,255,255,.08);color:var(--fg);width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;transition:background .2s ease;display:flex;align-items:center;justify-content:center}
+    .modal__close:hover{background:rgba(255,255,255,.2)}
+    .modal__body{padding:24px;overflow:auto;font-size:14px;color:var(--fg);line-height:1.6;background:#0b1220;white-space:pre-wrap;}
+    .profiler-report{display:flex;flex-direction:column;gap:18px;color:#f8fbff}
+    .report-header{background:#10172a;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px}
+    .report-title-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+    .report-title{font-size:22px;font-weight:600}
+    .report-uuid{font-size:14px;color:var(--mut);letter-spacing:.02em}
+    .report-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:14px;color:var(--mut)}
+    .report-body{display:flex;flex-direction:column;gap:16px}
+    .report-issues{display:flex;flex-direction:column;gap:18px}
+    .issue{background:#0f172a;border:1px solid rgba(59,130,246,.2);border-radius:16px;padding:18px;box-shadow:0 12px 32px rgba(2,6,23,.5)}
+    .issue-header{display:flex;flex-direction:column;gap:10px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:12px;margin-bottom:12px}
+    .issue-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .issue-title{font-size:18px;font-weight:600;color:#f1f5f9}
+    .issue-id{font-size:14px;color:var(--mut);}
+    .issue-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--mut)}
+    .issue-advice-label{font-weight:600;margin-right:6px}
+    .issue-stacks{margin-top:14px;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;background:#050910}
+    .issue-stacks summary{cursor:pointer;font-weight:600;color:var(--fg);outline:none}
+    .issue-stack-list{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:8px}
+    .issue-stack-item{background:#0b1120;border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:flex-start;border:1px solid rgba(255,255,255,.04)}
+    .issue-stack-hits{font-size:11px;color:#60a5fa;text-transform:uppercase;letter-spacing:.12em;background:rgba(59,130,246,.12);border-radius:999px;padding:4px 10px;font-weight:600;line-height:1;white-space:nowrap}
+    .issue-stack-frames{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;min-width:0;background:rgba(5,9,16,.8)}
+    .issue-stack-frame{font-size:12px;color:#cbd5f5;border-radius:8px;padding:1px 8px;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .issue-stack-frame-code{font-size:12px;background:none;padding:0;border-radius:0;display:block;max-width:100%;word-break:initial;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f8fafc}
+
+    .sr-only {position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap;  border: 0;}
+    #addFlamegraph + .flame-label::before { content: "🚫"; margin-right: 6px; }
+    #addFlamegraph:checked + .flame-label::before { content: "🔥"; }
   </style>
 </head>
 <body>
@@ -47,9 +84,10 @@
           <button type="button" id="send">Send files</button>
         </div>
       </div>
-      <label for="addFlamegraph" style="display:flex;gap:8px;align-items:center;justify-content:flex-start;margin-top:10px;color:#cbd5e1;font-size:14px;">
-        <input id="addFlamegraph" type="checkbox" style="accent-color:#3b82f6">
-        <span style="font-weight:600;">Add flamegraphs</span>
+      <label for="addFlamegraph"
+        style="display:flex;gap:8px;align-items:center;justify-content:flex-start;margin-top:10px;color:#cbd5e1;font-size:14px;cursor:pointer;">
+        <input id="addFlamegraph" type="checkbox" class="sr-only">
+        <span class="flame-label" style="font-weight:600;">Add flamegraphs</span>
       </label>
 
       <ul id="list" aria-live="polite"></ul>
@@ -67,13 +105,13 @@
     </section>
   </div>
 
-  <div id="statsModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
-    <div style="background:#181e2a;color:#e9eef5;padding:24px;border-radius:12px;max-width:1500px;max-height:80vh;overflow:auto;box-shadow:0 4px 32px #0008;position:relative;">
-      <h3 id="statsTitle" style="margin-top:0;word-break:break-all;overflow-wrap:anywhere;display:flex;align-items:center;justify-content:space-between;font-size:15px;">
-        <span id="statsUuid"></span>
-        <button id="closeStats" style="margin-left:18px;font-size:20px;background:none;border:none;cursor:pointer;z-index:2;color:#e9eef5;line-height:1;padding-right:0px;padding-top:0px;">✖️</button>
-      </h3>
-      <pre id="statsContent" style="white-space:pre-wrap;word-break:break-all;font-size:13px;"></pre>
+  <div id="statsModal" class="modal" aria-hidden="true">
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+      <header class="modal__header">
+        <h3 id="statsTitle" class="modal__title"></h3>
+        <button id="closeStats" class="modal__close" aria-label="Close dialog">✖</button>
+      </header>
+      <div id="statsContent" class="modal__body" role="document"></div>
     </div>
   </div>
 
@@ -96,6 +134,68 @@
   const historyEl = document.getElementById('history');
   const clearBtn = document.getElementById('clear');
   const flameCheckbox = document.getElementById('addFlamegraph');
+  const STATS_TITLE_MAX = 400;
+  const setStatus = (txt = '') => { status.textContent = txt; };
+  const resetProgress = () => { prog.hidden = true; prog.value = 0; };
+  const stringifyStats = (stats) => {
+    try{ return JSON.stringify(stats, null, 2) || ''; }
+    catch{ return ''; }
+  };
+  const trimmedStatsTitle = (stats) => {
+    const str = stringifyStats(stats);
+    return str.slice(0, STATS_TITLE_MAX) + (str.length > STATS_TITLE_MAX ? '…' : '');
+  };
+  const createLink = (href, label) => {
+    const a = document.createElement('a');
+    a.href = href;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = label;
+    return a;
+  };
+  const createIcon = (symbol, color, title, handler) => {
+    const span = document.createElement('span');
+    span.textContent = symbol;
+    span.style.color = color;
+    span.style.fontSize = '20px';
+    span.style.verticalAlign = 'middle';
+    span.style.cursor = 'pointer';
+    span.title = title || '';
+    span.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handler?.();
+    });
+    return span;
+  };
+  const createLinks = (base, entries) => entries.map(([suffix, label]) => createLink(base + suffix, label));
+  const createHistoryNameSpan = (item, statsString) => {
+    const nameSpan = document.createElement('span');
+    const displayName = (item.name && item.name.trim()) ? item.name.trim() : item.uuid;
+    nameSpan.textContent = displayName;
+    nameSpan.className = 'history-name';
+    nameSpan.dataset.uuid = item.uuid;
+    nameSpan.spellcheck = false;
+    nameSpan.tabIndex = 0;
+    nameSpan.title = statsString;
+    nameSpan.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      beginNameEdit(nameSpan);
+    });
+    nameSpan.addEventListener('keydown', (e) => {
+      if(nameSpan.dataset.editing !== '1') return;
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        finishNameEdit(item.uuid, nameSpan, true, {triggerBlur: true});
+      } else if(e.key === 'Escape'){
+        e.preventDefault();
+        finishNameEdit(item.uuid, nameSpan, false, {triggerBlur: true});
+      }
+    });
+    nameSpan.addEventListener('blur', () => {
+      finishNameEdit(item.uuid, nameSpan, true);
+    });
+    return nameSpan;
+  };
 
   // === Link history on the right ===
   function loadHistory(){
@@ -139,6 +239,25 @@
     saveHistory(arr);
     renderHistory();
   }
+  function normalizeConvertorPayload(raw){
+    const payload = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if(!payload || typeof payload !== 'object') throw new Error('Payload must be an object or JSON string');
+    if(!payload.uuid) throw new Error('Payload must include a uuid field');
+    return {
+      uuid: String(payload.uuid),
+      stats: payload.stats,
+      flame: Boolean(payload.flame),
+      name: typeof payload.name === 'string' ? payload.name : ''
+    };
+  }
+  function applyConvertorResponse(rawPayload, {statusMessage = 'Simulated response applied.'} = {}){
+    const normalized = normalizeConvertorPayload(rawPayload);
+    addToHistory(normalized);
+    setStatus(statusMessage);
+    resetProgress();
+    return normalized;
+  }
+  window.applyConvertorResponse = applyConvertorResponse;
   function clearHistory(){ saveHistory([]); renderHistory(); }
   function persistHistoryName(uuid, newName){
     const arr = loadHistory();
@@ -194,115 +313,59 @@
       historyEl.append(li);
       return;
     }
+    const frag = document.createDocumentFragment();
     arr.forEach(item => {
       const li = document.createElement('li');
 
       const uuidSpan = document.createElement('span');
-      const statsString = JSON.stringify(item.stats, null, 2) || '';
-      uuidSpan.title = statsString.slice(0, 400) + (statsString.length > 400 ? '…' : '');
+      const statsString = trimmedStatsTitle(item.stats);
+      uuidSpan.title = statsString;
       uuidSpan.style.fontSize = '16px';
       uuidSpan.style.fontWeight = 'bold';
       uuidSpan.style.display = 'inline-flex';
       uuidSpan.style.alignItems = 'center';
       uuidSpan.style.gap = '4px';
 
-      const infoIcon = document.createElement('span');
-      infoIcon.textContent = 'ⓘ';
-      infoIcon.style.color = '#3b82f6';
-      infoIcon.style.fontSize = '20px';
-      infoIcon.style.verticalAlign = 'middle';
-      infoIcon.style.cursor = 'pointer';
-      infoIcon.style.color = 'rgb(45, 212, 191)';
-
-      infoIcon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showStatsModal(item.stats, `Statistics`);
+      const infoIcon = createIcon('ⓘ', 'rgb(96, 165, 250)', 'Show statistics', () => {
+        showStatsModal(JSON.stringify(item.stats, null, 2), 'Statistics', statsString);
       });
-
-      const detailsIcon = document.createElement('span');
-      detailsIcon.textContent = 'Ⓓ';
-      detailsIcon.style.color = '#3b82f6';
-      detailsIcon.style.fontSize = '20px';
-      detailsIcon.style.verticalAlign = 'middle';
-      detailsIcon.style.cursor = 'pointer';
-      detailsIcon.style.paddingRight = '5px';
-      infoIcon.style.color = 'rgb(96, 165, 250)';
-
-      detailsIcon.addEventListener('click', async (e) => {
-        e.stopPropagation();
+      const recommendationsIcon = createIcon('ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
         try {
           const response = await fetch("/api/detector/" + item.uuid);
-
-          if (!response.ok) {
-            throw new Error("HTTP " + response.status);
-          }
-
-          showStatsModal(await response.json(), `Recommendations`);
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          showStatsModal(await response.text(), 'Recommendations');
         } catch (err) {
-          showStatsModal(err.toString(), `Recommendations`);
+          showStatsModal(err.toString(), 'Recommendations');
           console.error(err);
         }
       });
+      recommendationsIcon.style.paddingRight = '5px';
 
+      const nameSpan = createHistoryNameSpan(item, statsString);
+      uuidSpan.append(infoIcon, /*recommendationsIcon,*/ nameSpan);
 
-      const nameSpan = document.createElement('span');
-      const displayName = (item.name && item.name.trim()) ? item.name.trim() : item.uuid;
-      nameSpan.textContent = displayName;
-      nameSpan.className = 'history-name';
-      nameSpan.dataset.uuid = item.uuid;
-      nameSpan.spellcheck = false;
-      nameSpan.tabIndex = 0;
-      nameSpan.title = statsString.slice(0, 400) + (statsString.length > 400 ? '…' : '');
-
-      nameSpan.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        beginNameEdit(nameSpan);
-      });
-      nameSpan.addEventListener('keydown', (e) => {
-        if(nameSpan.dataset.editing !== '1') return;
-        if(e.key === 'Enter'){
-          e.preventDefault();
-          finishNameEdit(item.uuid, nameSpan, true, {triggerBlur: true});
-        } else if(e.key === 'Escape'){
-          e.preventDefault();
-          finishNameEdit(item.uuid, nameSpan, false, {triggerBlur: true});
-        }
-      });
-      nameSpan.addEventListener('blur', () => {
-        finishNameEdit(item.uuid, nameSpan, true);
-      });
-
-      uuidSpan.append(infoIcon, detailsIcon, nameSpan);
-
-      const a0 = document.createElement('a');
-      a0.href = '/api/convertor/' + item.uuid;
-      a0.target = '_blank'; a0.rel = 'noopener'; a0.textContent = "heatmap";
-      const a1 = document.createElement('a');
-      a1.href = '/api/convertor/' + item.uuid+"-cpu";
-      a1.target = '_blank'; a1.rel = 'noopener'; a1.textContent = "cpu";
-      const a2 = document.createElement('a');
-      a2.href = '/api/convertor/' + item.uuid+"-alloc";
-      a2.target = '_blank'; a2.rel = 'noopener'; a2.textContent = "alloc";
-      li.append(uuidSpan, a0, a1, a2);
+      const baseLinks = createLinks('/api/convertor/' + item.uuid, [
+        ['', 'heatmap'],
+        ['-cpu', 'cpu'],
+        ['-alloc', 'alloc']
+      ]);
+      li.append(uuidSpan, ...baseLinks);
 
       if(item.flame){
         const sep = document.createElement('span');
-        sep.textContent = 'flame graphs ⟶';
+        sep.textContent = '🔥 flame graphs ⟶';
         sep.style.color = '#475569';
-        const f0 = document.createElement('a');
-        f0.href = '/api/convertor/' + item.uuid + '-flame';
-        f0.target = '_blank'; f0.rel = 'noopener'; f0.textContent = 'flamegraph';
-        const f1 = document.createElement('a');
-        f1.href = '/api/convertor/' + item.uuid + '-flame-cpu';
-        f1.target = '_blank'; f1.rel = 'noopener'; f1.textContent = 'cpu';
-        const f2 = document.createElement('a');
-        f2.href = '/api/convertor/' + item.uuid + '-flame-alloc';
-        f2.target = '_blank'; f2.rel = 'noopener'; f2.textContent = 'alloc';
-        li.append(sep, f0, f1, f2);
+        const flameLinks = createLinks('/api/convertor/' + item.uuid, [
+          ['-flame', 'flamegraph'],
+          ['-flame-cpu', 'cpu'],
+          ['-flame-alloc', 'alloc']
+        ]);
+        li.append(sep, ...flameLinks);
       }
 
-      historyEl.append(li);
+      frag.append(li);
     });
+    historyEl.append(frag);
   }
 
   // === File handling on the left ===
@@ -347,7 +410,7 @@
     const dt = new DataTransfer();
     fileInput.files = dt.files;
     // leave progress and status: status will show "Done", hide progress
-    prog.value = 0; prog.hidden = true;
+    resetProgress();
   }
 
   // Send files via fetch (async)
@@ -356,7 +419,7 @@
     const currentBatch = lastSelectedBatchId; // remember what exactly we send
     const addFlamegraph = flameCheckbox.checked;
     try{
-      status.textContent = 'Uploading…';
+      setStatus('Uploading…');
       prog.hidden = false;
       let fake = 0; const t = setInterval(()=>{fake=Math.min(99, fake+3); prog.value=fake;}, 120);
 
@@ -370,18 +433,17 @@
 
       const result = await resp.json().catch(()=>null);
       if(!result || !result.uuid){
-        status.textContent = 'Uploaded, but the server did not return a valid uuid.';
+        setStatus('Uploaded, but the server did not return a valid uuid.');
       } else {
-        status.textContent = 'Done';
-        addToHistory({ ...result, flame: Boolean(result.flame) });
+        applyConvertorResponse(result, {statusMessage: 'Done'});
       }
 
       // Do not remove current items immediately — only after 10 seconds
       scheduleBatchClear(currentBatch, 10000);
       softResetAfterSend();
     } catch(err){
-      status.textContent = 'Error: ' + err.message;
-      prog.hidden = true;
+      setStatus('Error: ' + err.message);
+      resetProgress();
     }
   }
 
@@ -394,7 +456,6 @@
   );
 
   // Clicks and changes
-  // drop.addEventListener('click', () => fileInput.click());
   pick.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => setFiles(fileInput.files));
   sendBtn.addEventListener('click', sendFiles);
@@ -406,22 +467,33 @@
 </script>
 <script>
 const statsModal = document.getElementById('statsModal');
+const statsTitle = document.getElementById('statsTitle');
+const statsContent = document.getElementById('statsContent');
 const closeStatsButton = document.getElementById('closeStats');
 
 function closeStatsModal(){
-  statsModal.style.display = 'none';
+  statsModal.classList.remove('is-visible');
+  statsModal.setAttribute('aria-hidden', 'true');
+  statsContent.innerHTML = '';
 }
 
-function showStatsModal(stats, uuid){
-  statsModal.style.display = 'flex';
-  document.getElementById('statsUuid').textContent = uuid;
-  document.getElementById('statsContent').textContent = JSON.stringify(stats, null, 2);
+function showStatsModal(body, title){
+  statsModal.classList.add('is-visible');
+  statsModal.setAttribute('aria-hidden', 'false');
+  statsTitle.textContent = title;
+  statsContent.innerHTML = body;
 }
 
-closeStatsButton.onclick = closeStatsModal;
+closeStatsButton.addEventListener('click', closeStatsModal);
 
 document.addEventListener('keydown', (event) => {
-  if(event.key === 'Escape' && statsModal.style.display !== 'none'){
+  if(event.key === 'Escape' && statsModal.classList.contains('is-visible')){
+    closeStatsModal();
+  }
+});
+
+statsModal.addEventListener('click', (event) => {
+  if(event.target === statsModal){
     closeStatsModal();
   }
 });
