@@ -19,14 +19,14 @@
     button,.ghost{padding:10px 14px;border-radius:10px;border:0;background:var(--acc);color:#fff;cursor:pointer}
     .ghost{background:#1f2937;color:var(--fg)}
     ul{list-style:none;padding:0;margin:12px 0 0;overflow:auto}
-    li{display:flex;justify-content:space-between;gap:8px;padding:1px 0;border-bottom:1px dashed #223}
+    li{display:flex;justify-content:space-between;gap:8px;padding:2px 0;border-bottom:1px dashed #223}
     small{color:var(--mut)}
     .row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
     progress{width:100%;height:10px}
 
     .history{border:2px dashed #334155;border-radius:14px;padding:12px;min-height:360px}
-    .history ol{margin:8px 0 0;padding-left:0px;max-height:420px;overflow:auto}
-    .history li{display:grid;grid-template-columns:12fr 2fr 1fr 1fr;gap:8px;align-items:start}
+    .history ol{margin:8px 0 0;padding-left:0px;max-height:420px}
+    .history li{display:grid;grid-template-columns:12fr 2fr 1fr 1fr;gap:0px;align-items:start}
     .history li a{word-break:break-word;text-decoration:none}
     .history li a:hover{text-decoration:underline}
     .history-name{cursor:text;min-width:0;display:inline-flex;align-items:center;gap:6px}
@@ -39,9 +39,7 @@
     .modal__title{margin:0;font-size:18px;font-weight:600;letter-spacing:.01em}
     .modal__close{border:none;background:rgba(255,255,255,.08);color:var(--fg);width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;transition:background .2s ease;display:flex;align-items:center;justify-content:center}
     .modal__close:hover{background:rgba(255,255,255,.2)}
-    .modal__body{padding:24px;overflow:auto;font-size:14px;color:var(--fg);line-height:1.6;background:#0b1220}
-    .modal__body--json{font-family:"JetBrains Mono",Consolas,monospace;white-space:pre-wrap;background:#050910;border-radius:12px;padding:24px}
-    .modal__body--html{background:#0b1220}
+    .modal__body{padding:24px;overflow:auto;font-size:14px;color:var(--fg);line-height:1.6;background:#0b1220;white-space:pre-wrap;}
     .profiler-report{display:flex;flex-direction:column;gap:18px;color:#f8fbff}
     .report-header{background:#10172a;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px}
     .report-title-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
@@ -54,7 +52,7 @@
     .issue-header{display:flex;flex-direction:column;gap:10px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:12px;margin-bottom:12px}
     .issue-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .issue-title{font-size:18px;font-weight:600;color:#f1f5f9}
-    .issue-id{font-size:14px;color:var(--mut);font-family:"JetBrains Mono",Consolas,monospace}
+    .issue-id{font-size:14px;color:var(--mut);}
     .issue-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--mut)}
     .issue-advice-label{font-weight:600;margin-right:6px}
     .issue-stacks{margin-top:14px;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;background:#050910}
@@ -64,8 +62,7 @@
     .issue-stack-hits{font-size:11px;color:#60a5fa;text-transform:uppercase;letter-spacing:.12em;background:rgba(59,130,246,.12);border-radius:999px;padding:4px 10px;font-weight:600;line-height:1;white-space:nowrap}
     .issue-stack-frames{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;min-width:0;background:rgba(5,9,16,.8)}
     .issue-stack-frame{font-size:12px;color:#cbd5f5;border-radius:8px;padding:1px 8px;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .issue-stack-frame-code{font-family:"JetBrains Mono",Consolas,monospace;font-size:12px;background:none;padding:0;border-radius:0;display:block;max-width:100%;word-break:initial;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f8fafc}
-
+    .issue-stack-frame-code{font-size:12px;background:none;padding:0;border-radius:0;display:block;max-width:100%;word-break:initial;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f8fafc}
 
     .sr-only {position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap;  border: 0;}
     #addFlamegraph + .flame-label::before { content: "🚫"; margin-right: 6px; }
@@ -331,9 +328,9 @@
       uuidSpan.style.gap = '4px';
 
       const infoIcon = createIcon('ⓘ', 'rgb(96, 165, 250)', 'Show statistics', () => {
-        showStatsModal(item.stats, 'Statistics', statsString);
+        showStatsModal(JSON.stringify(item.stats, null, 2), 'Statistics', statsString);
       });
-      const detailsIcon = createIcon('ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
+      const recommendationsIcon = createIcon('ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
         try {
           const response = await fetch("/api/detector/" + item.uuid);
           if (!response.ok) throw new Error("HTTP " + response.status);
@@ -343,10 +340,10 @@
           console.error(err);
         }
       });
-      detailsIcon.style.paddingRight = '5px';
+      recommendationsIcon.style.paddingRight = '5px';
 
       const nameSpan = createHistoryNameSpan(item, statsString);
-      uuidSpan.append(infoIcon, detailsIcon, nameSpan);
+      uuidSpan.append(infoIcon, recommendationsIcon, nameSpan);
 
       const baseLinks = createLinks('/api/convertor/' + item.uuid, [
         ['', 'heatmap'],
@@ -460,7 +457,6 @@
   );
 
   // Clicks and changes
-  // drop.addEventListener('click', () => fileInput.click());
   pick.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => setFiles(fileInput.files));
   sendBtn.addEventListener('click', sendFiles);
@@ -480,26 +476,13 @@ function closeStatsModal(){
   statsModal.classList.remove('is-visible');
   statsModal.setAttribute('aria-hidden', 'true');
   statsContent.innerHTML = '';
-  statsContent.classList.remove('modal__body--json', 'modal__body--html');
 }
 
-function showStatsModal(stats, title, contentOverride){
-  const rawValue = contentOverride ?? (typeof stats === 'string' ? stats : JSON.stringify(stats, null, 2));
-  const value = typeof rawValue === 'string' ? rawValue : '';
-  const trimmed = value.trim();
-  const looksLikeHtml = trimmed.startsWith('<');
-
+function showStatsModal(body, title){
   statsModal.classList.add('is-visible');
   statsModal.setAttribute('aria-hidden', 'false');
-  statsTitle.textContent = title || 'Report';
-  statsContent.classList.toggle('modal__body--json', !looksLikeHtml);
-  statsContent.classList.toggle('modal__body--html', looksLikeHtml);
-
-  if(looksLikeHtml){
-    statsContent.innerHTML = value;
-  } else {
-    statsContent.textContent = value;
-  }
+  statsTitle.textContent = title;
+  statsContent.innerHTML = body;
 }
 
 closeStatsButton.addEventListener('click', closeStatsModal);
