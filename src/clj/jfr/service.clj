@@ -103,7 +103,8 @@
         files (->> (get params "files")
                    utils/normalize-vector
                    (filter #(and (map? %) (contains? % :tempfile))))
-        add-flame? (= "true" (get params "addFlamegraph"))]
+        add-flame? (= "true" (get params "addFlamegraph"))
+        add-detector? (= "true" (get params "addDetector"))]
     (io/make-parents merged-path)
     (println "UUID:" uuid (if add-flame? "with flamegraph" "without flamegraph") "\n\t\tFiles to merge:" files)
     (with-open [out (io/output-stream merged-path)]
@@ -118,5 +119,5 @@
       (when add-flame?
         (->> (convert-flamegraph merged-path flag)
              (storage/save-bytes (str uuid "-flame" suffix)))))
-    (schedule-detector! uuid merged-path)
-    [uuid (jfr-stats merged-path) add-flame?]))
+    (when add-detector? (schedule-detector! uuid merged-path))
+    [uuid (jfr-stats merged-path) add-flame? add-detector?]))

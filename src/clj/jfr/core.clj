@@ -28,10 +28,10 @@
 
 (defroutes handlers
   (GET "/" [] index)
-  (POST "/api/convertor" req (let [[uuid stats add-flame?] (service/generate-artifacts req)]
+  (POST "/api/convertor" req (let [[uuid stats add-flame? add-detector?] (service/generate-artifacts req)]
                                {:status 200
                                 :headers {"Content-Type" "application/json"}
-                                :body (json/write-str {:uuid uuid :stats stats :flame add-flame?})}))
+                                :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})}))
   (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
   (GET "/api/detector-raw/:uuid" [uuid]
        (if-let [result (service/detector-result uuid)]
