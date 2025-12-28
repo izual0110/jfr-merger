@@ -456,7 +456,6 @@
   );
 
   // Clicks and changes
-  // drop.addEventListener('click', () => fileInput.click());
   pick.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => setFiles(fileInput.files));
   sendBtn.addEventListener('click', sendFiles);
@@ -476,7 +475,6 @@ function closeStatsModal(){
   statsModal.classList.remove('is-visible');
   statsModal.setAttribute('aria-hidden', 'true');
   statsContent.innerHTML = '';
-  statsContent.classList.remove('modal__body--json', 'modal__body--html');
 }
 
 function showStatsModal(body, title){
