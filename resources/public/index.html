@@ -329,7 +329,7 @@
       const infoIcon = createIcon('ⓘ', 'rgb(96, 165, 250)', 'Show statistics', () => {
         showStatsModal(JSON.stringify(item.stats, null, 2), 'Statistics', statsString);
       });
-      const detailsIcon = createIcon('ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
+      const recommendationsIcon = createIcon('ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
         try {
           const response = await fetch("/api/detector/" + item.uuid);
           if (!response.ok) throw new Error("HTTP " + response.status);
@@ -339,10 +339,10 @@
           console.error(err);
         }
       });
-      detailsIcon.style.paddingRight = '5px';
+      recommendationsIcon.style.paddingRight = '5px';
 
       const nameSpan = createHistoryNameSpan(item, statsString);
-      uuidSpan.append(infoIcon, /*detailsIcon,*/ nameSpan);
+      uuidSpan.append(infoIcon, /*recommendationsIcon,*/ nameSpan);
 
       const baseLinks = createLinks('/api/convertor/' + item.uuid, [
         ['', 'heatmap'],
