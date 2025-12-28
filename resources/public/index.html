@@ -23,6 +23,7 @@
     small{color:var(--mut)}
     .row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
     progress{width:100%;height:10px}
+
     .history{border:2px dashed #334155;border-radius:14px;padding:12px;min-height:360px}
     .history ol{margin:8px 0 0;padding-left:0px;max-height:420px;overflow:auto}
     .history li{display:grid;grid-template-columns:12fr 2fr 1fr 1fr;gap:8px;align-items:start}
@@ -30,6 +31,10 @@
     .history li a:hover{text-decoration:underline}
     .history-name{cursor:text;min-width:0;display:inline-flex;align-items:center;gap:6px}
     .history-name[contenteditable="true"]{outline:1px solid var(--acc);border-radius:4px;padding:0 4px}
+
+    .sr-only {position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap;  border: 0;}
+    #addFlamegraph + .flame-label::before { content: "🚫"; margin-right: 6px; }
+    #addFlamegraph:checked + .flame-label::before { content: "🔥"; }
   </style>
 </head>
 <body>
@@ -47,9 +52,10 @@
           <button type="button" id="send">Send files</button>
         </div>
       </div>
-      <label for="addFlamegraph" style="display:flex;gap:8px;align-items:center;justify-content:flex-start;margin-top:10px;color:#cbd5e1;font-size:14px;">
-        <input id="addFlamegraph" type="checkbox" style="accent-color:#3b82f6">
-        <span style="font-weight:600;">Add flamegraphs</span>
+      <label for="addFlamegraph"
+        style="display:flex;gap:8px;align-items:center;justify-content:flex-start;margin-top:10px;color:#cbd5e1;font-size:14px;cursor:pointer;">
+        <input id="addFlamegraph" type="checkbox" class="sr-only">
+        <span class="flame-label" style="font-weight:600;">Add flamegraphs</span>
       </label>
 
       <ul id="list" aria-live="polite"></ul>
@@ -291,7 +297,7 @@
       const infoIcon = createIcon('ⓘ', 'rgb(96, 165, 250)', 'Show statistics', () => {
         showStatsModal(item.stats, 'Statistics', statsString);
       });
-      const detailsIcon = createIcon('Ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
+      const detailsIcon = createIcon('ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
         try {
           const response = await fetch("/api/detector/" + item.uuid);
           if (!response.ok) throw new Error("HTTP " + response.status);
@@ -315,7 +321,7 @@
 
       if(item.flame){
         const sep = document.createElement('span');
-        sep.textContent = 'flame graphs ⟶';
+        sep.textContent = '🔥 flame graphs ⟶';
         sep.style.color = '#475569';
         const flameLinks = createLinks('/api/convertor/' + item.uuid, [
           ['-flame', 'flamegraph'],
