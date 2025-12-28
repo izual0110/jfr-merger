@@ -15,32 +15,46 @@ public class BadPatternsDemo {
     }
 
     public static void main(String[] args) throws Exception {
-        int iters = args.length > 0 ? Integer.parseInt(args[0]) : 1_000_000;
-
+        int iters = args.length > 0 ? Integer.parseInt(args[0]) : 10_000;
+        System.out.println("warmup...");
         exec(500_000); // warmup
         Thread.sleep(10_000);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1; i++) {
             System.out.println("Running bad patterns with iterations[" + i + "] = " + iters);
             exec(iters);
             Thread.sleep(5_000);
         }
     }
 
-    private static void exec(int iters){
+    private static void exec(int iters) throws Exception{
         badEnumValues(iters);
+        Thread.sleep(1_000);
         badStringSplit(iters);
+        Thread.sleep(1_000);
         badStringFormat(iters);
+        Thread.sleep(1_000);
         badSimpleDateFormat(iters);
+        Thread.sleep(1_000);
         badAutoboxing(iters);
+        Thread.sleep(1_000);
         badSingletonList(iters);
+        Thread.sleep(1_000);
         badOptional(iters);
+        Thread.sleep(1_000);
         badLambdaAllocations(iters);
+        Thread.sleep(1_000);
         badRandomCtor(iters);
+        Thread.sleep(1_000);
         badToArrayCtor(iters);
+        Thread.sleep(1_000);
         badKeysetContains(iters);
+        Thread.sleep(1_000);
         badStreamsInLoop(iters);
+        Thread.sleep(1_000);
         badCurrentTimeMillis(iters);
+        Thread.sleep(1_000);
         badBigDecimalCtor(iters);
+        Thread.sleep(1_000);
         badToCharArray(iters);
 
         System.out.println("Done. SINK=" + (SINK == null ? "null" : SINK.hashCode()));
