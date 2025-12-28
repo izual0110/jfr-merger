@@ -291,7 +291,7 @@
       const infoIcon = createIcon('ⓘ', 'rgb(96, 165, 250)', 'Show statistics', () => {
         showStatsModal(item.stats, 'Statistics', statsString);
       });
-      const detailsIcon = createIcon('Ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
+      const detailsIcon = createIcon('ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
         try {
           const response = await fetch("/api/detector/" + item.uuid);
           if (!response.ok) throw new Error("HTTP " + response.status);
