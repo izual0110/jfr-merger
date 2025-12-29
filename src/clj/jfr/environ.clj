@@ -6,14 +6,14 @@
 
 (defn slurp-safe [x]
   (try
-    (when x [(slurp x) (str x)])             
-    (catch Exception _ nil)))                    
+    (when x [(slurp x) (str x)])
+    (catch Exception _ nil)))
 
 (defn file-readable?
   [path]
-  (let [f (io/file path)]         
-    (and (.exists f)                
-         (.isFile f)          
+  (let [f (io/file path)]
+    (and (.exists f)
+         (.isFile f)
          (.canRead f))))
 
 
@@ -29,17 +29,8 @@
       (edn/read-string raw)
       {})))
 
-(defn- ensure-config []
-  (or @config (reset! config (load-config))))
-
-(defn- get-property
-  ([key]
-   (get (ensure-config) key))
-  ([key & xs]
-   (let [config-map (ensure-config)]
-     (if (seq xs)
-       (get-in config-map (into [key] xs))
-       (get config-map key)))))
+(defn- get-property [key] 
+  (get (or @config (reset! config (load-config))) key))
 
 (defn get-jfr-data-path [] (.getAbsolutePath (java.io.File. (get-property :jfr-data-path))))
 (defn temp-dir [] (get-property :temp-dir))
