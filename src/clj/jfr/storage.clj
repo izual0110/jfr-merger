@@ -18,7 +18,7 @@
                     (.setMinBlobSize (long (* 512 1024)))
                     (.setBlobCompressionType CompressionType/ZSTD_COMPRESSION))
           db-path (get-db-path)]
-      (log/infof "Opening RocksDB at %s" db-path)
+      (log/info (str "Opening RocksDB at " db-path))
       (io/make-parents db-path)
       (reset! db-atom (RocksDB/open options db-path)))))
 
