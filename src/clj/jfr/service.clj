@@ -6,6 +6,7 @@
            (java.nio.charset StandardCharsets))
   (:require [clojure.java.io :as io]
             [clojure.data.json :as json]
+            [clojure.tools.logging :as log]
             [jfr.storage :as storage]
             [jfr.utils :as utils]
             [jfr.environ :as env]
@@ -82,7 +83,8 @@
                          :hit-count (count hits)
                          :summary summary}]
              (write-detector-result! uuid result)
-             (println "Detector job completed for" uuid "\n\tat" finished-at "\n\tduration:" (- finished-at started-at) "ms"))
+             (log/infof "Detector job completed for %s at %d (duration: %d ms)"
+                        uuid finished-at (- finished-at started-at)))
            (catch Throwable t
              (let [finished-at (System/currentTimeMillis)
                    result {:uuid uuid
@@ -91,10 +93,9 @@
                            :started-at started-at
                            :finished-at finished-at
                            :error (.getMessage t)}]
-               (println "Detector job failed for" uuid ":" (.getMessage t))
-               (.printStackTrace t)
+               (log/error (format "Detector job failed for %s: %s" uuid (.getMessage t)) t)
                (write-detector-result! uuid result)))))))
-    (println "Scheduled detector job for" uuid "\n\tat" scheduled-at)))
+    (log/infof "Scheduled detector job for %s at %d" uuid scheduled-at)))
 
 (defn generate-artifacts [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
@@ -106,7 +107,10 @@
         add-flame? (= "true" (get params "addFlamegraph"))
         add-detector? (= "true" (get params "addDetector"))]
     (io/make-parents merged-path)
-    (println "UUID:" uuid (if add-flame? "with flamegraph" "without flamegraph") "\n\t\tFiles to merge:" files)
+    (log/infof "UUID: %s %s\n\t\tFiles to merge: %s"
+               uuid
+               (if add-flame? "with flamegraph" "without flamegraph")
+               files)
     (with-open [out (io/output-stream merged-path)]
       (doseq [file files]
         (with-open [in (io/input-stream (:tempfile file))]

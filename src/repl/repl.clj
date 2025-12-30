@@ -3,27 +3,30 @@
    [jfr.core :as core]
    [jfr.detector.detector :as detector]
    [jfr.detector.report :as report]
-   [hiccup2.core :as h])
+   [hiccup2.core :as h]
+   [clojure.tools.logging :as log])
   (:import [java.lang NullPointerException]))
 
 
 (core/stop-server)
 (core/-main)
 
-(.printStackTrace (new NullPointerException))
+(log/error "Simulated NullPointerException" (NullPointerException.))
 
 (defn test-detect []
   (let [;; jfr "test/BadPatternsDemo.jfr"
         jfr "test/SmallBadPatternsDemo.jfr"
         hits (detector/detect-patterns {:jfr-path jfr :alloc-only? false})
-        _ (println "Detected hits:" (count hits))
+        _ (log/infof "Detected hits: %d" (count hits))
         summary (detector/summarize hits {:top-stacks 30})]
-    (println "== Quick-fix patterns in" jfr)
+    (log/infof "== Quick-fix patterns in %s" jfr)
     (doseq [{:keys [id title count alloc-bytes top-stacks advice]} summary]
-      (println "\n--" id ":" title)
-      (println "   matches:" count (if (some? alloc-bytes) (str "  alloc-bytes≈" alloc-bytes) ""))
-      (println "   advice: " advice)
-      (println " " top-stacks))))
+      (log/info (format "%n-- %s : %s" id title))
+      (log/infof "   matches: %d%s"
+                 count
+                 (if (some? alloc-bytes) (str "  alloc-bytes≈" alloc-bytes) ""))
+      (log/infof "   advice: %s" advice)
+      (log/info (str " " top-stacks)))))
 
 (test-detect)
 
@@ -31,7 +34,7 @@
   (let [;; jfr "test/BadPatternsDemo.jfr"
         jfr "test/SmallBadPatternsDemo.jfr"
         hits (detector/detect-patterns {:jfr-path jfr :alloc-only? false})
-        _ (println "Detected hits:" (count hits))
+        _ (log/infof "Detected hits: %d" (count hits))
         summary (detector/summarize hits {:top-stacks 30})]
     (report/report-div {:uuid "test-uuid-1234"
                         :status "completed"
