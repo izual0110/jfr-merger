@@ -83,8 +83,9 @@
                          :hit-count (count hits)
                          :summary summary}]
              (write-detector-result! uuid result)
-             (log/infof "Detector job completed for %s at %d (duration: %d ms)"
-                        uuid finished-at (- finished-at started-at)))
+             (log/info (str "Detector job completed for " uuid
+                            " at " finished-at
+                            " (duration: " (- finished-at started-at) " ms)")))
            (catch Throwable t
              (let [finished-at (System/currentTimeMillis)
                    result {:uuid uuid
@@ -93,9 +94,9 @@
                            :started-at started-at
                            :finished-at finished-at
                            :error (.getMessage t)}]
-               (log/error (format "Detector job failed for %s: %s" uuid (.getMessage t)) t)
+               (log/error (str "Detector job failed for " uuid ": " (.getMessage t)) t)
                (write-detector-result! uuid result)))))))
-    (log/infof "Scheduled detector job for %s at %d" uuid scheduled-at)))
+    (log/info (str "Scheduled detector job for " uuid " at " scheduled-at))))
 
 (defn generate-artifacts [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
@@ -107,10 +108,9 @@
         add-flame? (= "true" (get params "addFlamegraph"))
         add-detector? (= "true" (get params "addDetector"))]
     (io/make-parents merged-path)
-    (log/infof "UUID: %s %s\n\t\tFiles to merge: %s"
-               uuid
-               (if add-flame? "with flamegraph" "without flamegraph")
-               files)
+    (log/info (str "UUID: " uuid " "
+                   (if add-flame? "with flamegraph" "without flamegraph")
+                   "\n\t\tFiles to merge: " files))
     (with-open [out (io/output-stream merged-path)]
       (doseq [file files]
         (with-open [in (io/input-stream (:tempfile file))]

@@ -23,7 +23,7 @@
                      (when-let [name "./config.edn"] (file-readable? name) (slurp-safe (io/file name)))
                      (when-let [name "./resources/config.edn"] (file-readable? name) (slurp-safe (io/file name)))
                      (when-let [u (io/resource "config.edn")] (slurp-safe u)))]
-    (log/infof "Loading config from %s" path)
+    (log/info (str "Loading config from " path))
     (if (some? config)
       (edn/read-string config)
       [])))

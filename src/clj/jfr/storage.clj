@@ -46,7 +46,7 @@
   (let [options (Options.)
         db-path (get-db-path)]
     (RocksDB/destroyDB db-path options)
-    (log/infof "Database %s was deleted" db-path)))
+    (log/info (str "Database " db-path " was deleted"))))
 
 (defn stats []
   (when-let [db @db-atom]

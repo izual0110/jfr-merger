@@ -17,15 +17,14 @@
   (let [;; jfr "test/BadPatternsDemo.jfr"
         jfr "test/SmallBadPatternsDemo.jfr"
         hits (detector/detect-patterns {:jfr-path jfr :alloc-only? false})
-        _ (log/infof "Detected hits: %d" (count hits))
+        _ (log/info (str "Detected hits: " (count hits)))
         summary (detector/summarize hits {:top-stacks 30})]
-    (log/infof "== Quick-fix patterns in %s" jfr)
+    (log/info (str "== Quick-fix patterns in " jfr))
     (doseq [{:keys [id title count alloc-bytes top-stacks advice]} summary]
-      (log/info (format "%n-- %s : %s" id title))
-      (log/infof "   matches: %d%s"
-                 count
-                 (if (some? alloc-bytes) (str "  alloc-bytes≈" alloc-bytes) ""))
-      (log/infof "   advice: %s" advice)
+      (log/info (str "\n-- " id " : " title))
+      (log/info (str "   matches: " count
+                     (if (some? alloc-bytes) (str "  alloc-bytes≈" alloc-bytes) "")))
+      (log/info (str "   advice: " advice))
       (log/info (str " " top-stacks)))))
 
 (test-detect)
@@ -34,7 +33,7 @@
   (let [;; jfr "test/BadPatternsDemo.jfr"
         jfr "test/SmallBadPatternsDemo.jfr"
         hits (detector/detect-patterns {:jfr-path jfr :alloc-only? false})
-        _ (log/infof "Detected hits: %d" (count hits))
+        _ (log/info (str "Detected hits: " (count hits)))
         summary (detector/summarize hits {:top-stacks 30})]
     (report/report-div {:uuid "test-uuid-1234"
                         :status "completed"
