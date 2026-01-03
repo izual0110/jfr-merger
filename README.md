@@ -58,12 +58,15 @@ clj -M:repl
 # tests
 clj -M:test
 
-#run service
+# run service
 clj -X:uberjar
 
 # or build and run the executable uberjar
 clj -T:build uber
 java -jar target/jfr-merger-0.1.1.jar
+
+# update deps
+clj -Moutdated --write
 ```
 
 Once the server is running, open [http://localhost:8080/index.html](http://localhost:8080/index.html) in your browser.
