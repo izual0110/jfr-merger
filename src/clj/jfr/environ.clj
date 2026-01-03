@@ -28,7 +28,7 @@
       (log/info (str "Loading config from " path))
     (if raw
       (edn/read-string raw)
-      {})))
+      {}))))
 
 (defn- get-property [key] 
   (get (or @config (reset! config (load-config))) key))
