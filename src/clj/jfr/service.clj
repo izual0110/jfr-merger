@@ -104,7 +104,7 @@
         merged-path (str temp-dir "/" uuid ".jfr")
         files (->> (get params "files")
                    utils/normalize-vector
-                   (filter #(and (map? %) (contains? % :tempfile))))
+                   (filterv #(and (map? %) (contains? % :tempfile))))
         add-flame? (= "true" (get params "addFlamegraph"))
         add-detector? (= "true" (get params "addDetector"))]
     (io/make-parents merged-path)
