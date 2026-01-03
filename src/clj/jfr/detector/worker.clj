@@ -1,4 +1,5 @@
 (ns jfr.detector.worker
+  (:require [clojure.tools.logging :as log])
   (:import (java.util.concurrent LinkedBlockingQueue TimeUnit)))
 
 (defonce ^LinkedBlockingQueue queue (LinkedBlockingQueue.))
@@ -10,8 +11,7 @@
     (catch InterruptedException _
       (.interrupt (Thread/currentThread)))
     (catch Throwable t
-      (println "Detector task failed:" (.getMessage t))
-      (.printStackTrace t))))
+      (log/error (str "Detector task failed: " (.getMessage t)) t))))
 
 (defn- worker-loop []
   (try
@@ -21,7 +21,7 @@
       (when (some? @worker-thread)
         (recur)))
     (catch InterruptedException e
-      (.printStackTrace e))))
+      (log/warn "Detector worker loop interrupted" e))))
 
 (defn start! []
   (when (nil? @worker-thread)

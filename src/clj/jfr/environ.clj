@@ -1,6 +1,7 @@
 (ns jfr.environ
   (:require [clojure.edn :as edn]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.tools.logging :as log]))
 
 (def config (atom nil))
 
@@ -22,7 +23,7 @@
                      (when-let [name "./config.edn"] (file-readable? name) (slurp-safe (io/file name)))
                      (when-let [name "./resources/config.edn"] (file-readable? name) (slurp-safe (io/file name)))
                      (when-let [u (io/resource "config.edn")] (slurp-safe u)))]
-    (println "Loading config from" path)
+    (log/info (str "Loading config from " path))
     (if (some? config)
       (edn/read-string config)
       [])))
@@ -34,4 +35,3 @@
 
 (defn get-jfr-data-path [] (.getAbsolutePath (java.io.File. (get-property :jfr-data-path))))
 (defn temp-dir [] (get-property :temp-dir))
-
