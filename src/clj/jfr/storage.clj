@@ -1,7 +1,8 @@
 (ns jfr.storage
   (:import (org.rocksdb RocksDB Options CompressionType))
   (:require [jfr.environ :as env]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.tools.logging :as log]))
 
 (RocksDB/loadLibrary)
 
@@ -17,7 +18,7 @@
                     (.setMinBlobSize (long (* 512 1024)))
                     (.setBlobCompressionType CompressionType/ZSTD_COMPRESSION))
           db-path (get-db-path)]
-      (println "Opening RocksDB at" db-path)
+      (log/info (str "Opening RocksDB at " db-path))
       (io/make-parents db-path)
       (reset! db-atom (RocksDB/open options db-path)))))
 
@@ -45,7 +46,7 @@
   (let [options (Options.)
         db-path (get-db-path)]
     (RocksDB/destroyDB db-path options)
-    (println "Database" db-path "was deleted")))
+    (log/info (str "Database " db-path " was deleted"))))
 
 (defn stats []
   (when-let [db @db-atom]

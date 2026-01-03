@@ -1,37 +1,37 @@
 (ns jfr.environ
   (:require [clojure.edn :as edn]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.tools.logging :as log]))
 
-(def config (atom nil))
+(defonce ^:private config (atom nil))
 
 (defn slurp-safe [x]
   (try
-    (when x [(slurp x) (str x)])             
-    (catch Exception _ nil)))                    
+    (when x [(slurp x) (str x)])
+    (catch Exception _ nil)))
 
 (defn file-readable?
   [path]
-  (let [f (io/file path)]         
-    (and (.exists f)                
-         (.isFile f)          
+  (let [f (io/file path)]
+    (and (.exists f)
+         (.isFile f)
          (.canRead f))))
 
 
 (defn- load-config []
-  (let [[config path] (or
-                     (when-let [name "./config.edn"] (file-readable? name) (slurp-safe (io/file name)))
-                     (when-let [name "./resources/config.edn"] (file-readable? name) (slurp-safe (io/file name)))
-                     (when-let [u (io/resource "config.edn")] (slurp-safe u)))]
-    (println "Loading config from" path)
-    (if (some? config)
-      (edn/read-string config)
-      [])))
+  (let [candidates (concat (for [path ["./config.edn" "./resources/config.edn"]
+                                 :when (file-readable? path)]
+                             (io/file path))
+                           [(io/resource "config.edn")])
+        [raw path] (some slurp-safe candidates)]
+    (when path
+      (log/info (str "Loading config from " path))
+    (if raw
+      (edn/read-string raw)
+      {}))))
 
-(defn- get-property
-  ([key] (when (nil? @config) (reset! config (load-config))) (get @config key))
-  ([key & xs] (when (nil? @config) (reset! config (load-config)))
-   (get-in @config (concat [key] xs))))
+(defn- get-property [key] 
+  (get (or @config (reset! config (load-config))) key))
 
 (defn get-jfr-data-path [] (.getAbsolutePath (java.io.File. (get-property :jfr-data-path))))
 (defn temp-dir [] (get-property :temp-dir))
-

@@ -4,11 +4,14 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class BadPatternsDemo {
 
     // Volatile "black hole" so that results are not eliminated by JIT/GC
     public static volatile Object SINK;
+    private static final Logger LOGGER = LogManager.getLogger(BadPatternsDemo.class);
 
     enum Color {
         RED, GREEN, BLUE, YELLOW, BLACK
@@ -16,11 +19,11 @@ public class BadPatternsDemo {
 
     public static void main(String[] args) throws Exception {
         int iters = args.length > 0 ? Integer.parseInt(args[0]) : 10_000;
-        System.out.println("warmup...");
+        LOGGER.info("warmup...");
         exec(500_000); // warmup
         Thread.sleep(10_000);
         for (int i = 0; i < 1; i++) {
-            System.out.println("Running bad patterns with iterations[" + i + "] = " + iters);
+            LOGGER.info("Running bad patterns with iterations[{}] = {}", i, iters);
             exec(iters);
             Thread.sleep(5_000);
         }
@@ -57,7 +60,7 @@ public class BadPatternsDemo {
         Thread.sleep(1_000);
         badToCharArray(iters);
 
-        System.out.println("Done. SINK=" + (SINK == null ? "null" : SINK.hashCode()));
+        LOGGER.info("Done. SINK={}", SINK == null ? "null" : SINK.hashCode());
     }
 
     // 1) Enum.values() → each call clones the array (Enum.clone visible in stack)

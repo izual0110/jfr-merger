@@ -6,6 +6,7 @@
            (java.nio.charset StandardCharsets))
   (:require [clojure.java.io :as io]
             [clojure.data.json :as json]
+            [clojure.tools.logging :as log]
             [jfr.storage :as storage]
             [jfr.utils :as utils]
             [jfr.environ :as env]
@@ -82,7 +83,9 @@
                          :hit-count (count hits)
                          :summary summary}]
              (write-detector-result! uuid result)
-             (println "Detector job completed for" uuid "\n\tat" finished-at "\n\tduration:" (- finished-at started-at) "ms"))
+             (log/info (str "Detector job completed for " uuid
+                            " at " finished-at
+                            " (duration: " (- finished-at started-at) " ms)")))
            (catch Throwable t
              (let [finished-at (System/currentTimeMillis)
                    result {:uuid uuid
@@ -91,10 +94,9 @@
                            :started-at started-at
                            :finished-at finished-at
                            :error (.getMessage t)}]
-               (println "Detector job failed for" uuid ":" (.getMessage t))
-               (.printStackTrace t)
+               (log/error (str "Detector job failed for " uuid ": " (.getMessage t)) t)
                (write-detector-result! uuid result)))))))
-    (println "Scheduled detector job for" uuid "\n\tat" scheduled-at)))
+    (log/info (str "Scheduled detector job for " uuid " at " scheduled-at))))
 
 (defn generate-artifacts [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
@@ -102,11 +104,13 @@
         merged-path (str temp-dir "/" uuid ".jfr")
         files (->> (get params "files")
                    utils/normalize-vector
-                   (filter #(and (map? %) (contains? % :tempfile))))
+                   (filterv #(and (map? %) (contains? % :tempfile))))
         add-flame? (= "true" (get params "addFlamegraph"))
         add-detector? (= "true" (get params "addDetector"))]
     (io/make-parents merged-path)
-    (println "UUID:" uuid (if add-flame? "with flamegraph" "without flamegraph") "\n\t\tFiles to merge:" files)
+    (log/info (str "UUID: " uuid " "
+                   (if add-flame? "with flamegraph" "without flamegraph")
+                   "\n\t\tFiles to merge: " files))
     (with-open [out (io/output-stream merged-path)]
       (doseq [file files]
         (with-open [in (io/input-stream (:tempfile file))]
