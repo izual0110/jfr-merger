@@ -9,7 +9,8 @@
    [compojure.core :refer [defroutes GET POST]]
    [org.httpkit.server :refer [run-server]]
    [hiccup2.core :as h]
-   [clojure.data.json :as json])
+   [clojure.data.json :as json]
+   [clojure.tools.logging :as log])
   (:gen-class))
 
 (defn index [_]
@@ -67,8 +68,8 @@
 (defn -main
   "I don't do a whole lot ... yet."
   [& _]
-  (println "Hello, World!")
-  (println "http://localhost:8080/index.html")
+  (log/info "Hello, World!")
+  (log/info "http://localhost:8080/index.html")
   (storage/init)
   (detector-worker/start!)
   (reset! server (run-server #'app {:port 8080 :max-body (* 1 1024 1024 1024)})))
