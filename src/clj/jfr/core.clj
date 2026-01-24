@@ -4,6 +4,7 @@
    [jfr.service :as service]
    [jfr.detector.worker :as detector-worker]
    [jfr.detector.report :as report]
+   [jfr.heapdump :as heapdump]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [compojure.route :refer [resources]]
    [compojure.core :refer [defroutes GET POST]]
@@ -34,6 +35,7 @@
                                {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})}))
+  (GET "/ws/heapdump" req (heapdump/handle-heapdump-ws req))
 
   (GET "/api/detector/:uuid" [uuid]
     (if-let [result (service/detector-result uuid)]
