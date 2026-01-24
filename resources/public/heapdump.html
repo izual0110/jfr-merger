@@ -25,13 +25,13 @@
 <body>
   <section class="panel">
     <h1>Heap Dump Stats (JOL)</h1>
-    <p>Upload a <code>.hprof</code> heap dump over a native WebSocket and receive the same stats as <code>jol-cli heapdump-stats</code>.</p>
+    <p>Upload a <code>.hprof</code> heap dump and receive the same stats as <code>jol-cli heapdump-stats</code>.</p>
     <p><a href="/index.html">← Back to JFR merge</a></p>
 
     <input id="fileInput" type="file" accept=".hprof" hidden>
     <div class="row">
       <button id="pick" class="secondary" type="button">Choose heap dump</button>
-      <button id="send" type="button" disabled>Send over WebSocket</button>
+      <button id="send" type="button" disabled>Analyze heap dump</button>
       <span id="fileName" class="status">No file selected.</span>
     </div>
     <progress id="progress" max="100" value="0" hidden></progress>
@@ -51,15 +51,11 @@
   const progress = document.getElementById('progress');
 
   let selectedFile = null;
-  let socket = null;
   let bytesSent = 0;
 
   const setStatus = (text) => { status.textContent = text; };
   const resetOutput = () => { output.textContent = ''; };
-  const wsUrl = () => {
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    return `${proto}://${location.host}/ws/heapdump`;
-  };
+  const uploadUrl = () => `${location.origin}/api/heapdump`;
 
   pickBtn.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (event) => {
@@ -73,69 +69,36 @@
     }
   });
 
-  const sendChunks = async (file) => {
-    const chunkSize = 512 * 1024;
-    let offset = 0;
-    while (offset < file.size) {
-      const chunk = file.slice(offset, offset + chunkSize);
-      const buf = await chunk.arrayBuffer();
-      socket.send(buf);
-      offset += chunkSize;
-      bytesSent = offset;
-      const pct = Math.min(100, Math.floor((bytesSent / file.size) * 100));
-      progress.value = pct;
-    }
-    socket.send(JSON.stringify({type: 'finish'}));
-  };
-
-  const connectAndSend = () => {
+  const sendHeapdump = async () => {
     if (!selectedFile) return;
     resetOutput();
     progress.hidden = false;
     progress.value = 0;
     bytesSent = 0;
-    setStatus('Connecting WebSocket…');
+    setStatus('Uploading…');
 
-    socket = new WebSocket(wsUrl());
-    socket.binaryType = 'arraybuffer';
+    const formData = new FormData();
+    formData.append('file', selectedFile, selectedFile.name);
 
-    socket.addEventListener('open', () => {
-      setStatus('Socket connected. Uploading…');
-      socket.send(JSON.stringify({type: 'start', filename: selectedFile.name, size: selectedFile.size}));
-    });
-
-    socket.addEventListener('message', async (event) => {
-      if (typeof event.data !== 'string') return;
-      let payload = null;
-      try { payload = JSON.parse(event.data); } catch { return; }
-      if (payload.type === 'ready') {
-        await sendChunks(selectedFile);
-        setStatus('Upload complete. Processing heap dump…');
-      } else if (payload.type === 'progress') {
-        if (selectedFile?.size) {
-          const pct = Math.min(100, Math.floor((payload.bytes / selectedFile.size) * 100));
-          progress.value = pct;
-        }
-      } else if (payload.type === 'processing') {
-        setStatus('Processing heap dump…');
-      } else if (payload.type === 'stats') {
-        setStatus('Done.');
-        output.textContent = payload.text || '';
-      } else if (payload.type === 'error') {
-        setStatus(`Error: ${payload.message || 'unknown error'}`);
+    try {
+      const response = await fetch(uploadUrl(), {
+        method: 'POST',
+        body: formData
+      });
+      progress.value = 100;
+      if (!response.ok) {
+        const message = await response.text();
+        setStatus(`Error: ${message}`);
+        return;
       }
-    });
-
-    socket.addEventListener('close', () => {
-      setStatus('Socket closed.');
-    });
-
-    socket.addEventListener('error', () => {
-      setStatus('WebSocket error.');
-    });
+      setStatus('Done.');
+      output.textContent = await response.text();
+    } catch (error) {
+      setStatus(`Error: ${error.message || 'Upload failed'}`);
+    }
   };
 
-  sendBtn.addEventListener('click', connectAndSend);
+  sendBtn.addEventListener('click', sendHeapdump);
 })();
 </script>
 </body>

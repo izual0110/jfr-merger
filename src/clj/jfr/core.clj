@@ -35,7 +35,7 @@
                                {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})}))
-  (GET "/ws/heapdump" req (heapdump/handle-heapdump-ws req))
+  (POST "/api/heapdump" req (heapdump/handle-heapdump-upload req))
 
   (GET "/api/detector/:uuid" [uuid]
     (if-let [result (service/detector-result uuid)]

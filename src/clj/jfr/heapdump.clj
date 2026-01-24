@@ -1,14 +1,11 @@
 (ns jfr.heapdump
   (:require
-   [clojure.data.json :as json]
    [clojure.java.io :as io]
    [clojure.string :as string]
    [clojure.tools.logging :as log]
-   [jfr.environ :as env]
-   [org.httpkit.server :refer [with-channel on-close on-receive send!]])
+   [jfr.environ :as env])
   (:import
-   (java.io BufferedOutputStream File FileOutputStream PrintWriter StringWriter)
-   (java.util UUID)
+   (java.io File PrintWriter StringWriter)
    (org.openjdk.jol.datamodel ModelVM)
    (org.openjdk.jol.heap HeapDumpReader)
    (org.openjdk.jol.layouters HotSpotLayouter)))
@@ -120,75 +117,31 @@
   (-> (or filename "heapdump.hprof")
       (string/replace #"[^A-Za-z0-9._-]" "_")))
 
-(defn- send-json! [channel payload]
-  (send! channel (json/write-str payload)))
-
-(defn handle-heapdump-ws [req]
-  (with-channel req channel
-    (let [state (atom {:stream nil
-                       :path nil
-                       :uuid nil
-                       :bytes 0
-                       :last-progress 0})]
-      (on-receive
-       channel
-       (fn [data]
-         (cond
-           (string? data)
-           (let [{:keys [type filename]} (json/read-str data :key-fn keyword)]
-             (case type
-               "start"
-               (let [uuid (str (UUID/randomUUID))
-                     temp-dir (env/temp-dir)
-                     file-name (safe-filename filename)
-                     path (str temp-dir "/" uuid "-" file-name)]
-                 (io/make-parents path)
-                 (when-let [stream (:stream @state)]
-                   (.close stream))
-                 (reset! state {:stream (BufferedOutputStream. (FileOutputStream. path))
-                                :path path
-                                :uuid uuid
-                                :bytes 0
-                                :last-progress 0})
-                 (send-json! channel {:type "ready" :uuid uuid}))
-
-               "finish"
-               (let [{:keys [stream path uuid bytes]} @state]
-                 (when stream
-                   (.flush stream)
-                   (.close stream))
-                 (send-json! channel {:type "processing" :bytes bytes})
-                 (future
-                   (try
-                     (let [text (heapdump-stats-text path)]
-                       (send-json! channel {:type "stats" :uuid uuid :text text}))
-                     (catch Exception e
-                       (log/error e "Failed to compute heap dump stats")
-                       (send-json! channel {:type "error" :message (.getMessage e)}))
-                     (finally
-                       (when path
-                         (.delete (File. path)))))))
-
-               (send-json! channel {:type "error" :message "Unknown command"})))
-
-           (instance? (Class/forName "[B") data)
-           (let [{:keys [stream bytes last-progress]} @state]
-             (if stream
-               (let [new-bytes (+ bytes (alength ^bytes data))]
-                 (.write stream ^bytes data)
-                 (swap! state assoc :bytes new-bytes)
-                 (when (>= (- new-bytes last-progress) (* 5 1024 1024))
-                   (swap! state assoc :last-progress new-bytes)
-                   (send-json! channel {:type "progress" :bytes new-bytes})))
-               (send-json! channel {:type "error" :message "Upload not initialized"})))
-
-           :else
-           (send-json! channel {:type "error" :message "Unsupported frame"}))))
-      (on-close
-       channel
-       (fn [status]
-         (when-let [stream (:stream @state)]
-           (try
-             (.close stream)
-             (catch Exception _)))
-         (log/info (str "Heapdump websocket closed: " status)))))))
+(defn handle-heapdump-upload [{:keys [params]}]
+  (let [file-param (get params "file")
+        tempfile (:tempfile file-param)
+        filename (:filename file-param)]
+    (if (and tempfile filename)
+      (let [temp-dir (env/temp-dir)
+            safe-name (safe-filename filename)
+            path (str temp-dir "/" safe-name)]
+        (io/make-parents path)
+        (try
+          (with-open [in (io/input-stream tempfile)
+                      out (io/output-stream path)]
+            (io/copy in out))
+          (let [text (heapdump-stats-text path)]
+            {:status 200
+             :headers {"Content-Type" "text/plain; charset=utf-8"}
+             :body text})
+          (catch Exception e
+            (log/error e "Failed to compute heap dump stats")
+            {:status 500
+             :headers {"Content-Type" "application/json"}
+             :body (str "{\"error\":\"" (string/replace (or (.getMessage e) "Unknown error") #"\"" "\\\"") "\"}")})
+          (finally
+            (when path
+              (.delete (File. path))))))
+      {:status 400
+       :headers {"Content-Type" "application/json"}
+       :body "{\"error\":\"Missing heapdump file\"}"})))
