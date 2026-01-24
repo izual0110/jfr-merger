@@ -13,6 +13,7 @@
 - **Generate three heatmaps per upload** – an aggregated view, CPU-only, and allocation-only heatmaps.
 - **Persist results in RocksDB** so you can share URLs or compare uploads later without reprocessing.
 - **Expose REST endpoints** for automation-friendly workflows (fetch stats, download heatmaps, list stored recordings).
+- **Upload heap dump stats** via a dedicated UI page powered by JOL.
 - **Docker-friendly packaging** and an uberjar build for easy deployment to your preferred environment.
 
 ---
@@ -134,6 +135,7 @@ While the SPA is the primary entry point, the server exposes a small REST interf
 | `GET`  | `/api/convertor/{uuid}` | Download the generated HTML artifact (heatmaps use suffixes `-cpu`/`-alloc`; flamegraphs use `-flame`, `-flame-cpu`, `-flame-alloc`). |
 | `GET`  | `/api/storage/stats`    | Inspect RocksDB statistics (estimated key count, live data size, etc.). |
 | `GET`  | `/api/storage/keys`     | List all stored keys for housekeeping scripts. |
+| `POST` | `/api/heapdump`         | Upload a `.hprof` heap dump (multipart field `file`) and receive JOL heapdump stats output. |
 
 The stats payload mirrors the structure produced by [`jfr.service/jfr-stats`](src/clj/jfr/service.clj), making it straightforward to surface additional metadata.
 
