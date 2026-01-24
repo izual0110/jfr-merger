@@ -6,12 +6,7 @@
   (:import
    (com.sun.management HotSpotDiagnosticMXBean)
    (java.lang.management ManagementFactory)
-   (java.nio.file Files)
-   (org.openjdk.jol.info ClassData)))
-
-(deftest class-name-uses-jol-name
-  (is (= "com.example.Foo"
-         (heapdump/class-name (ClassData. "com.example.Foo")))))
+   (java.nio.file Files)))
 
 (defn- ^HotSpotDiagnosticMXBean hotspot-diagnostic []
   (ManagementFactory/newPlatformMXBeanProxy

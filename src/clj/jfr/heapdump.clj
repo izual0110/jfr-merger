@@ -1,10 +1,9 @@
 (ns jfr.heapdump
   (:require
    [clojure.java.io :as io]
-   [clojure.string :as string]
-   [clojure.tools.logging :as log]
    [jfr.environ :as env])
   (:import
+   (java.util UUID)
    (java.io File PrintWriter StringWriter)
    (org.openjdk.jol.datamodel ModelVM)
    (org.openjdk.jol.heap HeapDumpReader)
@@ -17,10 +16,6 @@
    :size "SIZE"
    :sum-size "SUM SIZE"
    :class "CLASS"})
-
-(defn- table-print-first []
-  (or (some-> (System/getProperty "printFirst") Integer/parseInt)
-      30))
 
 (defn- format-row [^PrintWriter pw row]
   (doseq [key column-order]
@@ -41,16 +36,14 @@
   (let [sorted-rows (if (= sort-key :class)
                       (sort-by :class rows)
                       (sort-by sort-key #(compare %2 %1) rows))
-        print-first (table-print-first)
+        print-first (env/get-heapdump-print-first)
         [head tail] (split-at print-first sorted-rows)
         tops (sum-columns head)
         sums (sum-columns sorted-rows)]
-    (.println pw "=== Class Histogram")
+    (.println pw (str "=== Class Histogram. Printing first " print-first " lines."))
     (.println pw)
     (.println pw (format "Table is sorted by \"%s\"."
                          (get column-labels sort-key)))
-    (when (not= print-first Integer/MAX_VALUE)
-      (.println pw (format "Printing first %d lines. Use -DprintFirst=# to override." print-first)))
     (.println pw)
     (doseq [key column-order]
       (.print pw (format " %15s" (get column-labels key))))
@@ -71,21 +64,10 @@
     (.print pw "    <total>\n")
     (.println pw)))
 
-(defn- get-vm-version []
-  (try
-    (Integer/parseInt (System/getProperty "java.specification.version"))
-    (catch Exception _
-      8)))
-
-(defn class-name
-  "Return a display-friendly class name from JOL ClassData."
-  [class-data]
-  (.name class-data))
-
 (defn heapdump-stats-text
   "Return the jol-cli heapdump-stats output for the provided heap dump."
   [path]
-  (let [layouter (HotSpotLayouter. (ModelVM.) (get-vm-version))
+  (let [layouter (HotSpotLayouter. (ModelVM.) (env/get-vm-version))
         writer (StringWriter.)
         pw (PrintWriter. writer)]
     (.println pw (str "Heap Dump: " path))
@@ -95,7 +77,7 @@
                      :let [cnt (.count data cd)]
                      :when (pos? cnt)
                      :let [instance-size (-> layouter (.layout cd) (.instanceSize))]]
-                 {:class (class-name cd)
+                 {:class (.name cd)
                   :instances (long cnt)
                   :size (long instance-size)
                   :sum-size (long (* cnt instance-size))})]
@@ -109,8 +91,8 @@
     (.toString writer)))
 
 (defn- safe-filename [filename]
-  (-> (or filename "heapdump.hprof")
-      (string/replace #"[^A-Za-z0-9._-]" "_")))
+  (println filename)
+  (str (UUID/randomUUID) (if (.endsWith filename ".gz") ".hprof.gz" ".hprof")))
 
 (defn handle-heapdump-upload [{:keys [params]}]
   (let [file-param (get params "file")
@@ -125,18 +107,9 @@
           (with-open [in (io/input-stream tempfile)
                       out (io/output-stream path)]
             (io/copy in out))
-          (let [text (heapdump-stats-text path)]
-            {:status 200
-             :headers {"Content-Type" "text/plain; charset=utf-8"}
-             :body text})
-          (catch Exception e
-            (log/error e "Failed to compute heap dump stats")
-            {:status 500
-             :headers {"Content-Type" "application/json"}
-             :body (str "{\"error\":\"" (string/replace (or (.getMessage e) "Unknown error") #"\"" "\\\"") "\"}")})
+          (heapdump-stats-text path)
           (finally
             (when path
               (.delete (File. path))))))
-      {:status 400
-       :headers {"Content-Type" "application/json"}
-       :body "{\"error\":\"Missing heapdump file\"}"})))
+      (throw (IllegalArgumentException. "Missing heapdump file")))))
+
