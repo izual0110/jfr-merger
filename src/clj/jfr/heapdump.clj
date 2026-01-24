@@ -91,7 +91,6 @@
     (.toString writer)))
 
 (defn- safe-filename [filename]
-  (println filename)
   (str (UUID/randomUUID) (if (.endsWith filename ".gz") ".hprof.gz" ".hprof")))
 
 (defn handle-heapdump-upload [{:keys [params]}]
