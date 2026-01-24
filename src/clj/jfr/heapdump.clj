@@ -10,22 +10,31 @@
    (org.openjdk.jol.heap HeapDumpReader)
    (org.openjdk.jol.layouters HotSpotLayouter)))
 
-(def ^:private table-columns
-  [{:key :instances :label "INSTANCES"}
-   {:key :size :label "SIZE"}
-   {:key :sum-size :label "SUM SIZE"}
-   {:key :class :label "CLASS"}])
-(def ^:private table-labels
-  (into {} (map (juxt :key :label) table-columns)))
+(def ^:private column-order [:instances :size :sum-size])
+
+(def ^:private column-labels
+  {:instances "INSTANCES"
+   :size "SIZE"
+   :sum-size "SUM SIZE"
+   :class "CLASS"})
 
 (defn- table-print-first []
   (or (some-> (System/getProperty "printFirst") Integer/parseInt)
       30))
 
-(defn- format-table-row [^PrintWriter pw row]
-  (doseq [{:keys [key]} (butlast table-columns)]
+(defn- format-row [^PrintWriter pw row]
+  (doseq [key column-order]
     (.printf pw " %,15d" (long (get row key))))
   (.printf pw "    %s%n" (str (:class row))))
+
+(defn- sum-columns [rows]
+  (reduce (fn [acc row]
+            (reduce (fn [inner key]
+                      (update inner key + (get row key)))
+                    acc
+                    column-order))
+          {:instances 0 :size 0 :sum-size 0}
+          rows))
 
 (defn- print-table
   [^PrintWriter pw rows sort-key]
@@ -33,50 +42,31 @@
                       (sort-by :class rows)
                       (sort-by sort-key #(compare %2 %1) rows))
         print-first (table-print-first)
-        total-count (count sorted-rows)
         [head tail] (split-at print-first sorted-rows)
-        tops (reduce (fn [acc row]
-                       (reduce (fn [inner {:keys [key]}]
-                                 (if (= key :class)
-                                   inner
-                                   (update inner key + (get row key))))
-                               acc
-                               (butlast table-columns)))
-                     {:instances 0 :size 0 :sum-size 0}
-                     head)
-        sums (reduce (fn [acc row]
-                       (reduce (fn [inner {:keys [key]}]
-                                 (if (= key :class)
-                                   inner
-                                   (update inner key + (get row key))))
-                               acc
-                               (butlast table-columns)))
-                     {:instances 0 :size 0 :sum-size 0}
-                     sorted-rows)]
+        tops (sum-columns head)
+        sums (sum-columns sorted-rows)]
     (.println pw "=== Class Histogram")
     (.println pw)
-    (if (= sort-key :class)
-      (.println pw "Table is sorted by \"CLASS\".")
-      (.println pw (format "Table is sorted by \"%s\"."
-                           (get table-labels sort-key))))
+    (.println pw (format "Table is sorted by \"%s\"."
+                         (get column-labels sort-key)))
     (when (not= print-first Integer/MAX_VALUE)
       (.println pw (format "Printing first %d lines. Use -DprintFirst=# to override." print-first)))
     (.println pw)
-    (doseq [{:keys [label]} (butlast table-columns)]
-      (.printf pw " %15s" label))
+    (doseq [key column-order]
+      (.printf pw " %15s" (get column-labels key)))
     (.println pw "    CLASS")
     (.println pw "------------------------------------------------------------------------------------------------")
     (doseq [row head]
-      (format-table-row pw row))
-    (when (< print-first total-count)
-      (doseq [{:keys [label]} (butlast table-columns)]
+      (format-row pw row))
+    (when (seq tail)
+      (doseq [_ column-order]
         (.printf pw " %15s" "..."))
       (.printf pw "    ...%n")
-      (doseq [{:keys [key]} (butlast table-columns)]
+      (doseq [key column-order]
         (.printf pw " %,15d" (long (- (get sums key) (get tops key)))))
       (.printf pw "    <other>%n"))
     (.println pw "------------------------------------------------------------------------------------------------")
-    (doseq [{:keys [key]} (butlast table-columns)]
+    (doseq [key column-order]
       (.printf pw " %,15d" (long (get sums key))))
     (.printf pw "    <total>%n")
     (.println pw)))
