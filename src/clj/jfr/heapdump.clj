@@ -87,6 +87,11 @@
     (catch Exception _
       8)))
 
+(defn class-name
+  "Return a display-friendly class name from JOL ClassData."
+  [class-data]
+  (.name class-data))
+
 (defn heapdump-stats-text
   "Return the jol-cli heapdump-stats output for the provided heap dump."
   [path]
@@ -100,7 +105,7 @@
                      :let [cnt (.count data cd)]
                      :when (pos? cnt)
                      :let [instance-size (-> layouter (.layout cd) (.instanceSize))]]
-                 {:class (.prettyName cd)
+                 {:class (class-name cd)
                   :instances (long cnt)
                   :size (long instance-size)
                   :sum-size (long (* cnt instance-size))})]
