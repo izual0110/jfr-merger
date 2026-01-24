@@ -34,8 +34,8 @@ cd jfr-merger
 
 # Download the async-profiler converter jars used during heatmap generation
 mkdir -p lib
-curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.2.1/jfr-converter.jar
-curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.2.1/async-profiler-4.2.1-linux-x64.tar.gz" | tar -xz -C lib
+curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.3/jfr-converter.jar
+curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.3/async-profiler-4.3-linux-x64.tar.gz" | tar -xz -C lib
 ```
 
 ### 2. Configure storage paths (optional)
@@ -116,7 +116,7 @@ docker compose up --build
 If you need synthetic load, the repository includes [`test/BadPatternsDemo.java`](test/BadPatternsDemo.java):
 
 ```bash
-java -agentpath:$(pwd)/lib/async-profiler-4.1-linux-x64/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
+java -agentpath:$(pwd)/lib/async-profiler-4.3-linux-x64/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
 ```
 
 Upload `profile.jfr` through the UI to experiment with the heatmaps. To preview a flamegraph locally without the web app, run
