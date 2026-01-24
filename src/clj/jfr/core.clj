@@ -4,13 +4,15 @@
    [jfr.service :as service]
    [jfr.detector.worker :as detector-worker]
    [jfr.detector.report :as report]
+   [jfr.heapdump :as heapdump]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [compojure.route :refer [resources]]
    [compojure.core :refer [defroutes GET POST]]
    [org.httpkit.server :refer [run-server]]
    [hiccup2.core :as h]
    [clojure.data.json :as json]
-   [clojure.tools.logging :as log])
+   [clojure.tools.logging :as log]
+   [clojure.string :as string])
   (:gen-class))
 
 (defn index [_]
@@ -34,6 +36,21 @@
                                {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})}))
+  (POST "/api/heapdump" req (let [response (heapdump/handle-heapdump-upload req)]
+                             (try
+                               {:status 200
+                                :headers {"Content-Type" "text/plain; charset=utf-8"}
+                                :body response}
+                               (catch IllegalArgumentException e
+                                 (log/error e "Failed to compute heap dump stats")
+                                 {:status 400
+                                  :headers {"Content-Type" "application/json"}
+                                  :body "{\"error\":\"Missing heapdump file\"}"})
+                               (catch Exception e
+                                 (log/error e "Failed to compute heap dump stats")
+                                 {:status 500
+                                  :headers {"Content-Type" "application/json"}
+                                  :body (str "{\"error\":\"" (string/replace (or (.getMessage e) "Unknown error") #"\"" "\\\"") "\"}")}))))
 
   (GET "/api/detector/:uuid" [uuid]
     (if-let [result (service/detector-result uuid)]

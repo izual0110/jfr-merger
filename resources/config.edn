@@ -1,2 +1,3 @@
 {:jfr-data-path "storage/jfrs" 
- :temp-dir "storage/temp"}
+ :temp-dir "storage/temp"
+ :heapdump-print-first 50}

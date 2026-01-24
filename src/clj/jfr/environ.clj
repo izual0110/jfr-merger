@@ -30,8 +30,17 @@
       (edn/read-string raw)
       {}))))
 
+(defn reload-config! []
+  (reset! config (load-config)))
+
 (defn- get-property [key] 
   (get (or @config (reset! config (load-config))) key))
 
 (defn get-jfr-data-path [] (.getAbsolutePath (java.io.File. (get-property :jfr-data-path))))
 (defn temp-dir [] (get-property :temp-dir))
+(defn get-heapdump-print-first [] (get-property :heapdump-print-first))
+(defn get-vm-version []
+  (try
+    (Integer/parseInt (System/getProperty "java.specification.version"))
+    (catch Exception _
+      8)))

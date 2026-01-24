@@ -7,7 +7,7 @@
 (defn -main [& _]
   (let [dirs [(io/file "test")]
         nss (ns-find/find-namespaces-in-dir (first dirs))]
-    (log/infof "Running tests in namespaces: %s" nss)
+    (log/infof "Running tests in namespaces: %s" (vec nss))
     (apply require nss)
     (let [{:keys [fail error]} (apply t/run-tests nss)]
       (shutdown-agents)
