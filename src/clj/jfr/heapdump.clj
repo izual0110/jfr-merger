@@ -24,8 +24,8 @@
 
 (defn- format-row [^PrintWriter pw row]
   (doseq [key column-order]
-    (.printf pw " %,15d" (long (get row key))))
-  (.printf pw "    %s%n" (str (:class row))))
+    (.print pw (format " %,15d" (long (get row key)))))
+  (.print pw (format "    %s%n" (str (:class row)))))
 
 (defn- sum-columns [rows]
   (reduce (fn [acc row]
@@ -53,22 +53,22 @@
       (.println pw (format "Printing first %d lines. Use -DprintFirst=# to override." print-first)))
     (.println pw)
     (doseq [key column-order]
-      (.printf pw " %15s" (get column-labels key)))
+      (.print pw (format " %15s" (get column-labels key))))
     (.println pw "    CLASS")
     (.println pw "------------------------------------------------------------------------------------------------")
     (doseq [row head]
       (format-row pw row))
     (when (seq tail)
       (doseq [_ column-order]
-        (.printf pw " %15s" "..."))
-      (.printf pw "    ...%n")
+        (.print pw (format " %15s" "...")))
+      (.print pw "    ...\n")
       (doseq [key column-order]
-        (.printf pw " %,15d" (long (- (get sums key) (get tops key)))))
-      (.printf pw "    <other>%n"))
+        (.print pw (format " %,15d" (long (- (get sums key) (get tops key))))))
+      (.print pw "    <other>\n"))
     (.println pw "------------------------------------------------------------------------------------------------")
     (doseq [key column-order]
-      (.printf pw " %,15d" (long (get sums key))))
-    (.printf pw "    <total>%n")
+      (.print pw (format " %,15d" (long (get sums key)))))
+    (.print pw "    <total>\n")
     (.println pw)))
 
 (defn- get-vm-version []
