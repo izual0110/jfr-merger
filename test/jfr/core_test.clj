@@ -49,14 +49,14 @@
             response (handler {:request-method :get
                                :uri "/index.html"})]
         (is (= 200 (:status response))))
-      (core/stop-server)
-      (is @stop-worker-called)
-      (is @destroy-called)
-      (is (= [:timeout 100] @stop-args))
-      (is (nil? @core/server))
       (catch Exception e
         (is false (str "Unexpected exception: " e)))
       (finally
+        (core/stop-server)
+        (is @stop-worker-called)
+        (is @destroy-called)
+        (is (= [:timeout 100] @stop-args))
+        (is (nil? @core/server))
         (alter-var-root #'org.httpkit.server/run-server (constantly original-run-server))
         (alter-var-root #'jfr.storage/init (constantly original-init))
         (alter-var-root #'jfr.storage/destroy (constantly original-destroy))
