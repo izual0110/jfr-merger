@@ -25,7 +25,9 @@
                          (catch Exception _ nil))]
           (cond
             (= 200 (:status response))
-            (is true)
+            (do
+              (is (seq (:body response)))
+              (is true))
 
             (zero? attempts)
             (is false (str "Unexpected status: " (:status response)))
