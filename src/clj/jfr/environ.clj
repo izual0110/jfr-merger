@@ -39,6 +39,7 @@
 (defn get-jfr-data-path [] (.getAbsolutePath (java.io.File. (get-property :jfr-data-path))))
 (defn temp-dir [] (get-property :temp-dir))
 (defn get-heapdump-print-first [] (get-property :heapdump-print-first))
+(defn get-server-port [] (get-property :server-port))
 (defn get-vm-version []
   (try
     (Integer/parseInt (System/getProperty "java.specification.version"))

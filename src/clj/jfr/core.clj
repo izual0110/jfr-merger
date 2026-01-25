@@ -12,7 +12,8 @@
    [hiccup2.core :as h]
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
-   [clojure.string :as string])
+   [clojure.string :as string]
+   [jfr.environ :as env])
   (:gen-class))
 
 (defn index [_]
@@ -82,14 +83,19 @@
   (-> handlers
       wrap-multipart-params))
 
+(defn start-server 
+  ([] (start-server (env/get-server-port)))
+  ([port]
+  (storage/init)
+  (detector-worker/start!)
+  (reset! server (run-server #'app {:port port :max-body Integer/MAX_VALUE}))))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& _]
   (log/info "Hello, World!")
   (log/info "http://localhost:8080/index.html")
-  (storage/init)
-  (detector-worker/start!)
-  (reset! server (run-server #'app {:port 8080 :max-body Integer/MAX_VALUE})))
+  start-server)
 
 
 ;; (-main)
