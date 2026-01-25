@@ -33,11 +33,7 @@
                   detector-worker/start! (fn [] (reset! start-called true))
                   detector-worker/stop! (fn [] (reset! stop-worker-called true))]
       (try
-        (try
-          (core/-main)
-          (is true)
-          (catch Exception e
-            (is false (str "Unexpected exception: " e))))
+        (core/-main)
         (is @init-called)
         (is @start-called)
         (is (fn? @core/server))
@@ -50,5 +46,7 @@
         (is @destroy-called)
         (is (= [:timeout 100] @stop-args))
         (is (nil? @core/server))
+        (catch Exception e
+          (is false (str "Unexpected exception: " e)))
         (finally
           (reset! core/server original-server))))))
