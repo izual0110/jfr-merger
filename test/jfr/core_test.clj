@@ -33,7 +33,10 @@
                   detector-worker/start! (fn [] (reset! start-called true))
                   detector-worker/stop! (fn [] (reset! stop-worker-called true))]
       (try
-        (core/-main)
+        (is (nil? (try
+                    (core/-main)
+                    nil
+                    (catch Exception e e))))
         (is @init-called)
         (is @start-called)
         (is (fn? @core/server))
