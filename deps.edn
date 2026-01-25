@@ -27,7 +27,10 @@
           :ns-default build}
   :test {:extra-paths ["test"]
          :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
-         :extra-deps {org.clojure/tools.namespace {:mvn/version "1.5.0"}}
+         :extra-deps {com.squareup.okhttp3/okhttp {:mvn/version "4.12.0"}
+                      org.bouncycastle/bcpkix-jdk18on {:mvn/version "1.81"}
+                      org.bouncycastle/bcprov-jdk18on {:mvn/version "1.81"}
+                      org.clojure/tools.namespace {:mvn/version "1.5.0"}}
          :main-opts ["-m" "test-runner"]}
   :outdated {:replace-deps {olical/depot {:mvn/version "2.4.1"}}
               :main-opts ["-m" "depot.outdated.main"]}}}

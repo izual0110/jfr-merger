@@ -1,13 +1,11 @@
 (ns jfr.core-test
   (:import [io.netty.handler.ssl.util SelfSignedCertificate]
            [java.io File]
-           [java.net URI]
-           [java.net.http HttpClient HttpClient$Version HttpRequest HttpResponse$BodyHandlers]
            [java.security.cert X509Certificate]
-           [java.util UUID]
-           [javax.net.ssl SSLContext SSLParameters TrustManager X509TrustManager])
-  (:require [aleph.netty :as netty]
-            [clojure.test :refer :all]
+           [java.util Arrays UUID]
+           [javax.net.ssl SSLContext TrustManager X509TrustManager]
+           [okhttp3 OkHttpClient OkHttpClient$Builder Protocol Request Request$Builder])
+  (:require [clojure.test :refer :all]
             [jfr.environ :as env]
             [jfr.core :as core]))
 
@@ -26,42 +24,46 @@
     (let [original-server @core/server
           port 8181
           cert (SelfSignedCertificate. "localhost")
-          ssl-context (netty/ssl-server-context {:certificate-chain (.certificate cert)
-                                                 :private-key (.privateKey cert)})
           trust-manager (reify X509TrustManager
                           (checkClientTrusted [_ _ _])
                           (checkServerTrusted [_ _ _])
                           (getAcceptedIssuers [_] (make-array X509Certificate 0)))
           client-ssl-context (doto (SSLContext/getInstance "TLS")
                                (.init nil (into-array TrustManager [trust-manager]) nil))
-          ssl-params (doto (SSLParameters.)
-                       (.setEndpointIdentificationAlgorithm nil))
-          client (-> (HttpClient/newBuilder)
-                     (.sslContext client-ssl-context)
-                     (.sslParameters ssl-params)
-                     (.version HttpClient$Version/HTTP_2)
+          client (-> (OkHttpClient$Builder.)
+                     (.sslSocketFactory (.getSocketFactory client-ssl-context) trust-manager)
+                     (.hostnameVerifier (reify javax.net.ssl.HostnameVerifier
+                                          (verify [_ _ _] true)))
+                     (.protocols (Arrays/asList (into-array Protocol [Protocol/HTTP_2 Protocol/HTTP_1_1])))
                      (.build))
-          request (-> (HttpRequest/newBuilder (URI. (str "https://localhost:" port "/index.html")))
-                      (.GET)
+          request (-> (Request$Builder.)
+                      (.url (str "https://localhost:" port "/index.html"))
+                      (.get)
                       (.build))]
       (try
-        (core/start-server port {:http2? true :ssl-context ssl-context})
+        (core/start-server port {:http2? true
+                                 :ssl-context {:certificate-chain (.certificate cert)
+                                               :private-key (.privateKey cert)}})
         (is (some? @core/server))
         (loop [attempts 10]
           (let [response (try
-                           (.send client request (HttpResponse$BodyHandlers/ofString))
+                           (.execute (.newCall client request))
                            (catch Exception _ nil))]
             (cond
-              (and response (= 200 (.statusCode response)))
-              (do
-                (is (seq (.body response)))
-                (is (= HttpClient$Version/HTTP_2 (.version response))))
+              (and response (= 200 (.code response)))
+              (try
+                (is (seq (.string (.body response))))
+                (is (= Protocol/HTTP_2 (.protocol response)))
+                (finally
+                  (.close response)))
 
               (zero? attempts)
-              (is false (str "Unexpected status: " (when response (.statusCode response))))
+              (is false (str "Unexpected status: " (when response (.code response))))
 
               :else
               (do
+                (when response
+                  (.close response))
                 (Thread/sleep 100)
                 (recur (dec attempts))))))
         (catch Exception e

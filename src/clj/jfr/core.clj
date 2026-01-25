@@ -89,10 +89,12 @@
   ([port {:keys [http2? ssl-context] :or {http2? false}}]
    (storage/init)
    (detector-worker/start!)
-   (reset! server (http/start-server #'app (cond-> {:port port
-                                                    :max-request-body-size Integer/MAX_VALUE}
-                                             http2? (assoc :http-versions [:http2 :http1])
-                                             ssl-context (assoc :ssl-context ssl-context)))))))
+   (reset! server
+           (http/start-server #'app
+                              (cond-> {:port port
+                                       :max-request-body-size Integer/MAX_VALUE}
+                                http2? (assoc :http-versions [:http2])
+                                ssl-context (assoc :ssl-context ssl-context))))))
 
 (defn -main
   "I don't do a whole lot ... yet."
