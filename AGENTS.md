@@ -40,6 +40,7 @@ docker compose up --build
 
 ## Testing & quality gate
 - Always run `clj -M:test` before pushing. Tests rely on temporary directories; avoid hard-coding absolute paths.
+- Execute `./prepare-env.sh` before running tests.
 - If you touch the HTTP layer, hit `http://localhost:8080/index.html` manually or via integration tests to confirm multipart uploads still succeed.
 - Ensure any new binaries or large files are ignored via `.gitignore`—only checked-in source/config files should land in commits.
 
