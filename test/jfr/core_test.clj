@@ -37,6 +37,8 @@
         (is @init-called)
         (is @start-called)
         (is (fn? @core/server))
+        (is (= {:port 8080 :max-body (* 1024 1024 1024)}
+               (:opts @run-args)))
         (let [handler (:handler @run-args)
               response (handler {:request-method :get
                                  :uri "/index.html"})]
