@@ -89,7 +89,7 @@
   (log/info "http://localhost:8080/index.html")
   (storage/init)
   (detector-worker/start!)
-  (reset! server (run-server #'app {:port 8080 :max-body (* 4 1024 1024 1024)})))
+  (reset! server (run-server #'app {:port 8080 :max-body (* 1024 1024 1024)})))
 
 
 ;; (-main)
