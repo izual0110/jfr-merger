@@ -20,8 +20,8 @@
   (with-redefs [env/get-jfr-data-path (fn [] (.getAbsolutePath (File. (str "target/jfr-test-db-" (UUID/randomUUID)))))]
     (let [original-server @core/server
           port 8181
-          url (str "http://localhost:" port "/index.html")
-          pool (http/connection-pool {:connection-options {:force-h2c? true}})
+          url (str "https://localhost:" port "/index.html")
+          pool (http/connection-pool {:connection-options {:force-h2c? true :insecure? true}})
           request-opts {:pool pool
                         :throw-exceptions false}]
       (try
