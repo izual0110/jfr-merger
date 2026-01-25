@@ -93,7 +93,8 @@
            (http/start-server #'app
                               (cond-> {:port port
                                        :max-request-body-size Integer/MAX_VALUE}
-                                http2? (assoc :http-versions [:http2])
+                                http2? (assoc :http-versions [:http2]
+                                              :use-h2c? true)
                                 ssl-context (assoc :ssl-context ssl-context))))))
 
 (defn -main
