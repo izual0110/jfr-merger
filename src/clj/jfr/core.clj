@@ -84,18 +84,15 @@
       wrap-multipart-params))
 
 (defn start-server
-  ([] (start-server (env/get-server-port) {}))
-  ([port] (start-server port {}))
-  ([port {:keys [http2? ssl-context] :or {http2? false}}]
+  ([] (start-server (env/get-server-port)))
+  ([port]
    (storage/init)
    (detector-worker/start!)
    (reset! server
-           (http/start-server #'app
-                              (cond-> {:port port
-                                       :max-request-body-size Integer/MAX_VALUE}
-                                http2? (assoc :http-versions [:http2]
-                                              :use-h2c? true)
-                                ssl-context (assoc :ssl-context ssl-context))))))
+           (http/start-server #'app {:port port
+                                     :max-request-body-size Integer/MAX_VALUE
+                                     :http-versions [:http2]
+                                     :use-h2c? true}))))
 
 (defn -main
   "I don't do a whole lot ... yet."

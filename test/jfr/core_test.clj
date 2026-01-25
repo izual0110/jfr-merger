@@ -25,7 +25,7 @@
           request-opts {:pool pool
                         :throw-exceptions false}]
       (try
-        (core/start-server port {:http2? true})
+        (core/start-server port)
         (is (some? @core/server))
         (loop [attempts 10]
           (let [response (try
