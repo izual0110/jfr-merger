@@ -8,7 +8,7 @@
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [compojure.route :refer [resources]]
    [compojure.core :refer [defroutes GET POST]]
-   [org.httpkit.server :refer [run-server]]
+   [aleph.http :as http]
    [hiccup2.core :as h]
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
@@ -75,20 +75,24 @@
 (defn stop-server []
   (detector-worker/stop!)
   (storage/destroy)
-  (when-not (nil? @server)
-    (@server :timeout 100)
+  (when-let [active-server @server]
+    (.close active-server)
     (reset! server nil)))
 
 (def app
   (-> handlers
       wrap-multipart-params))
 
-(defn start-server 
+(defn start-server
   ([] (start-server (env/get-server-port)))
   ([port]
-  (storage/init)
-  (detector-worker/start!)
-  (reset! server (run-server #'app {:port port :max-body Integer/MAX_VALUE}))))
+   (storage/init)
+   (detector-worker/start!)
+   (reset! server
+           (http/start-server #'app {:port port
+                                     :max-request-body-size Integer/MAX_VALUE
+                                     :http-versions [:http2]
+                                     :use-h2c? true}))))
 
 (defn -main
   "I don't do a whole lot ... yet."
