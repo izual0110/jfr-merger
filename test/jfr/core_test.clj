@@ -24,7 +24,7 @@
           pool (http/connection-pool {:connection-options {:http-versions [:http2] :force-h2c? true :insecure? true}})
           request-opts {:pool pool :throw-exceptions false}]
       (try
-        (core/start-server port)
+        (core/start-server port true)
         (is (some? @core/server))
         (loop [attempts 10]
           (let [response (try
