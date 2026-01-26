@@ -21,7 +21,7 @@
     (let [original-server @core/server
           port 8181
           url (str "https://localhost:" port "/index.html")
-          pool (http/connection-pool {:connection-options {:force-h2c? true :insecure? true}})
+          pool (http/connection-pool {:connection-options {:insecure? true}})
           request-opts {:pool pool
                         :throw-exceptions false}]
       (try
