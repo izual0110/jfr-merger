@@ -1,6 +1,7 @@
 (ns repl
   (:require
    [jfr.core :as core]
+   [jfr.environ :as env]
    [jfr.detector.detector :as detector]
    [jfr.detector.report :as report]
    [hiccup2.core :as h]
@@ -10,6 +11,8 @@
 
 (core/stop-server)
 (core/-main)
+
+(env/reload-config!)
 
 (log/error "Simulated NullPointerException" (NullPointerException.))
 
