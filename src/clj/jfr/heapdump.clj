@@ -77,7 +77,7 @@
                      :let [cnt (.count data cd)]
                      :when (pos? cnt)
                      :let [instance-size (-> layouter (.layout cd) (.instanceSize))]]
-                 {:class (.name cd)
+                 {:class (let [name (.name cd)] (if (.isArray cd) (str (subs name 0 (dec (count name))) (.arrayLength cd) "]") name))
                   :instances (long cnt)
                   :size (long instance-size)
                   :sum-size (long (* cnt instance-size))})]
