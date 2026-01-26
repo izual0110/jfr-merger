@@ -90,22 +90,22 @@
                                   (netty/application-protocol-config [:http2])}))
 
 (defn start-server
-  ([] (start-server (env/get-server-port)))
-  ([port]
+  ([] (start-server (env/get-server-port) (env/get-server-http2?)))
+  ([port http2?]
    (storage/init)
    (detector-worker/start!)
    (reset! server
            (http/start-server #'app {:port port
                                      :max-request-body-size Integer/MAX_VALUE
-                                     :http-versions [:http2]
-                                     :force-h2c? true
-                                     :ssl-context ssl}))))
+                                     :http-versions (if http2? [:http2] [:http1])
+                                     :force-h2c? http2? 
+                                     :ssl-context (if http2? ssl nil)}))))
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& _]
   (log/info "Hello, World!")
-  (log/info "https://localhost:8080/index.html")
+  (log/info (str "http" (if (env/get-server-http2?) "s" "") "://localhost:8080/index.html"))
   (start-server))
 
 ;; (-main)
