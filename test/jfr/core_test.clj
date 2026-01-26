@@ -21,9 +21,8 @@
     (let [original-server @core/server
           port 8181
           url (str "https://localhost:" port "/index.html")
-          pool (http/connection-pool {:connection-options {:force-h2c? true :insecure? true}})
-          request-opts {:pool pool
-                        :throw-exceptions false}]
+          pool (http/connection-pool {:connection-options {:http-versions [:http2] :force-h2c? true :insecure? true}})
+          request-opts {:pool pool :throw-exceptions false}]
       (try
         (core/start-server port)
         (is (some? @core/server))
@@ -32,20 +31,14 @@
                            @(http/get url request-opts)
                            (catch Exception _ nil))]
             (cond
-              (and response (= 200 (:status response)))
-              (let [body (:body response)
-                    text (if (string? body)
-                           body
-                           (slurp body))]
-                (is (seq text)))
+              (and response (= 200 (:status response))) (let [body (:body response)
+                                                              text (if (string? body) body (slurp body))] 
+                                                          (is (seq text)))
+              (zero? attempts) (is false (str "Unexpected status: " (when response (:status response))))
 
-              (zero? attempts)
-              (is false (str "Unexpected status: " (when response (:status response))))
-
-              :else
-              (do
-                (Thread/sleep 100)
-                (recur (dec attempts))))))
+              :else (do
+                      (Thread/sleep 100)
+                      (recur (dec attempts))))))
         (catch Exception e
           (is false (str "Unexpected exception: " e)))
         (finally
