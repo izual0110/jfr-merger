@@ -8,7 +8,8 @@
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [compojure.route :refer [resources]]
    [compojure.core :refer [defroutes GET POST]]
-   [org.httpkit.server :refer [run-server]]
+   [aleph.http :as http]
+   [aleph.netty :as netty]
    [hiccup2.core :as h]
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
@@ -75,28 +76,37 @@
 (defn stop-server []
   (detector-worker/stop!)
   (storage/destroy)
-  (when-not (nil? @server)
-    (@server :timeout 100)
+  (when-let [active-server @server]
+    (.close active-server)
     (reset! server nil)))
 
 (def app
   (-> handlers
       wrap-multipart-params))
 
-(defn start-server 
-  ([] (start-server (env/get-server-port)))
-  ([port]
-  (storage/init)
-  (detector-worker/start!)
-  (reset! server (run-server #'app {:port port :max-body Integer/MAX_VALUE}))))
+(def ssl
+  (netty/self-signed-ssl-context "localhost"
+                                 {:application-protocol-config
+                                  (netty/application-protocol-config [:http2])}))
+
+(defn start-server
+  ([] (start-server (env/get-server-port) (env/get-server-http2?)))
+  ([port http2?]
+   (storage/init)
+   (detector-worker/start!)
+   (reset! server
+           (http/start-server #'app {:port port
+                                     :max-request-body-size Integer/MAX_VALUE
+                                     :http-versions (if http2? [:http2] [:http1])
+                                     :force-h2c? http2? 
+                                     :ssl-context (if http2? ssl nil)}))))
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& _]
   (log/info "Hello, World!")
-  (log/info "http://localhost:8080/index.html")
-  start-server)
-
+  (log/info (str "http" (if (env/get-server-http2?) "s" "") "://localhost:8080/index.html"))
+  (start-server))
 
 ;; (-main)
 ;; (stop-server)

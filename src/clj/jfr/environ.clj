@@ -40,6 +40,7 @@
 (defn temp-dir [] (get-property :temp-dir))
 (defn get-heapdump-print-first [] (get-property :heapdump-print-first))
 (defn get-server-port [] (get-property :server-port))
+(defn get-server-http2? [] (get-property :http2?))
 (defn get-vm-version []
   (try
     (Integer/parseInt (System/getProperty "java.specification.version"))
