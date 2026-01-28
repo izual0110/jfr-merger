@@ -15,7 +15,6 @@ pom.xml.asc
 /node_modules
 /storage
 /lib
-!/lib/
 !/lib/jolDockerFile
 !/lib/assmble-jol.sh
 /lib/jol-dist
