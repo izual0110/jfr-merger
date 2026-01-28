@@ -15,6 +15,7 @@ pom.xml.asc
 /node_modules
 /storage
 /lib
+/libs/jol-dist
 
 ### VS Code ###
 .vscode/
