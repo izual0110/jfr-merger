@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1
+FROM eclipse-temurin:25-jdk AS build
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git maven \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+RUN git clone --depth 1 https://github.com/openjdk/jol.git
+
+WORKDIR /src/jol
+RUN mvn -q -DskipTests package \
+    && mkdir -p /out \
+    && cp jol-cli/target/jol-cli.jar /out/ \
+    && cp jol-core/target/jol-core-*.jar /out/ 
+
+FROM scratch AS export
+COPY --from=build /out/ /
