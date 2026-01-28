@@ -15,7 +15,10 @@ pom.xml.asc
 /node_modules
 /storage
 /lib
-/libs/jol-dist
+!/lib/
+!/lib/jolDockerFile
+!/lib/assmble-jol.sh
+/lib/jol-dist
 
 ### VS Code ###
 .vscode/
