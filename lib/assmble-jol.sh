@@ -7,7 +7,7 @@ OUT_DIR="${ROOT_DIR}/lib/"
 mkdir -p "${OUT_DIR}"
 
 docker build \
-  --file "${ROOT_DIR}/lib/jolDockerFile" \
+  --file "${ROOT_DIR}/lib/jolDockerfile" \
   --target export \
   --output "type=local,dest=${OUT_DIR}" \
   "${ROOT_DIR}"
