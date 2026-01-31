@@ -13,6 +13,7 @@
 - **Generate three heatmaps per upload** – an aggregated view, CPU-only, and allocation-only heatmaps.
 - **Persist results in RocksDB** so you can share URLs or compare uploads later without reprocessing.
 - **Expose REST endpoints** for automation-friendly workflows (fetch stats, download heatmaps, list stored recordings).
+- **Upload heap dump stats** via a dedicated UI page powered by JOL.
 - **Docker-friendly packaging** and an uberjar build for easy deployment to your preferred environment.
 
 ---
@@ -34,8 +35,8 @@ cd jfr-merger
 
 # Download the async-profiler converter jars used during heatmap generation
 mkdir -p lib
-curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.2.1/jfr-converter.jar
-curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.2.1/async-profiler-4.2.1-linux-x64.tar.gz" | tar -xz -C lib
+curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.3/jfr-converter.jar
+curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.3/async-profiler-4.3-linux-x64.tar.gz" | tar -xz -C lib
 ```
 
 ### 2. Configure storage paths (optional)
@@ -58,12 +59,15 @@ clj -M:repl
 # tests
 clj -M:test
 
-#run service
+# run service
 clj -X:uberjar
 
 # or build and run the executable uberjar
 clj -T:build uber
 java -jar target/jfr-merger-0.1.1.jar
+
+# update deps
+clj -Moutdated --write
 ```
 
 Once the server is running, open [http://localhost:8080/index.html](http://localhost:8080/index.html) in your browser.
@@ -113,7 +117,7 @@ docker compose up --build
 If you need synthetic load, the repository includes [`test/BadPatternsDemo.java`](test/BadPatternsDemo.java):
 
 ```bash
-java -agentpath:$(pwd)/lib/async-profiler-4.1-linux-x64/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
+java -agentpath:$(pwd)/lib/async-profiler-4.3-linux-x64/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
 ```
 
 Upload `profile.jfr` through the UI to experiment with the heatmaps. To preview a flamegraph locally without the web app, run
@@ -131,6 +135,7 @@ While the SPA is the primary entry point, the server exposes a small REST interf
 | `GET`  | `/api/convertor/{uuid}` | Download the generated HTML artifact (heatmaps use suffixes `-cpu`/`-alloc`; flamegraphs use `-flame`, `-flame-cpu`, `-flame-alloc`). |
 | `GET`  | `/api/storage/stats`    | Inspect RocksDB statistics (estimated key count, live data size, etc.). |
 | `GET`  | `/api/storage/keys`     | List all stored keys for housekeeping scripts. |
+| `POST` | `/api/heapdump`         | Upload a `.hprof` heap dump (multipart field `file`) and receive JOL heapdump stats output. |
 
 The stats payload mirrors the structure produced by [`jfr.service/jfr-stats`](src/clj/jfr/service.clj), making it straightforward to surface additional metadata.
 
