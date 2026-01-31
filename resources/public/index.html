@@ -145,8 +145,8 @@
       display: grid;
       grid-template-columns: 12fr 2fr 1fr 1fr;
       align-items: start;
-      padding: 0;
-      line-height: 1.1;
+      padding: 10px 0 12px 0;
+      line-height: 0.8;
     }
 
     .history li a { word-break: break-word; text-decoration: none; }
@@ -686,7 +686,7 @@
       const uuidSpan = document.createElement('span');
       const statsString = trimmedStatsTitle(item.stats);
       uuidSpan.title = statsString;
-      uuidSpan.style.fontSize = '16px';
+      uuidSpan.style.fontSize = '15px';
       uuidSpan.style.fontWeight = 'bold';
       uuidSpan.style.display = 'inline-flex';
       uuidSpan.style.alignItems = 'center';
