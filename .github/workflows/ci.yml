@@ -18,7 +18,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
-          key: buildx-cache
+          key: buildx-cache-${{ hashFiles('Dockerfile') }}
+          restore-keys: |
+            buildx-cache-
+          
 
       - name: Prepare Maven cache directory
         run: |
@@ -28,7 +31,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: clojure-m2-cache
+          key: clojure-m2-cache-${{ hashFiles('deps.edn') }}
+          restore-keys: |
+            clojure-m2-cache-
 
       - name: Check Clojure cache before tests
         run: |

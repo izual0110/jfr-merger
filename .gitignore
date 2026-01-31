@@ -14,7 +14,8 @@ pom.xml.asc
 /.cpcache
 /node_modules
 /storage
-/lib
+!/lib/jolDockerfile
+!/lib/assmble-jol.sh
 
 ### VS Code ###
 .vscode/

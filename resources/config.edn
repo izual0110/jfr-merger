@@ -1,2 +1,5 @@
 {:jfr-data-path "storage/jfrs" 
- :temp-dir "storage/temp"}
+ :temp-dir "storage/temp"
+ :heapdump-print-first 50
+ :server-port 8080
+ :http2? false}

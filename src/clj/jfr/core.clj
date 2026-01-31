@@ -4,12 +4,17 @@
    [jfr.service :as service]
    [jfr.detector.worker :as detector-worker]
    [jfr.detector.report :as report]
+   [jfr.heapdump :as heapdump]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [compojure.route :refer [resources]]
    [compojure.core :refer [defroutes GET POST]]
-   [org.httpkit.server :refer [run-server]]
+   [aleph.http :as http]
+   [aleph.netty :as netty]
    [hiccup2.core :as h]
-   [clojure.data.json :as json])
+   [clojure.data.json :as json]
+   [clojure.tools.logging :as log]
+   [clojure.string :as string]
+   [jfr.environ :as env])
   (:gen-class))
 
 (defn index [_]
@@ -28,19 +33,26 @@
 
 (defroutes handlers
   (GET "/" [] index)
+  (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
   (POST "/api/convertor" req (let [[uuid stats add-flame? add-detector?] (service/generate-artifacts req)]
                                {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})}))
-  (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
-  (GET "/api/detector-raw/:uuid" [uuid]
-       (if-let [result (service/detector-result uuid)]
-         {:status 200
-          :headers {"Content-Type" "application/json"}
-          :body (json/write-str result)}
-         {:status 404
-          :headers {"Content-Type" "application/json"}
-          :body (json/write-str {:error "Detector result not found"})}))
+  (POST "/api/heapdump" req (let [response (heapdump/handle-heapdump-upload req)]
+                             (try
+                               {:status 200
+                                :headers {"Content-Type" "text/plain; charset=utf-8"}
+                                :body response}
+                               (catch IllegalArgumentException e
+                                 (log/error e "Failed to compute heap dump stats")
+                                 {:status 400
+                                  :headers {"Content-Type" "application/json"}
+                                  :body "{\"error\":\"Missing heapdump file\"}"})
+                               (catch Exception e
+                                 (log/error e "Failed to compute heap dump stats")
+                                 {:status 500
+                                  :headers {"Content-Type" "application/json"}
+                                  :body (str "{\"error\":\"" (string/replace (or (.getMessage e) "Unknown error") #"\"" "\\\"") "\"}")}))))
 
   (GET "/api/detector/:uuid" [uuid]
     (if-let [result (service/detector-result uuid)]
@@ -64,23 +76,37 @@
 (defn stop-server []
   (detector-worker/stop!)
   (storage/destroy)
-  (when-not (nil? @server)
-    (@server :timeout 100)
+  (when-let [active-server @server]
+    (.close active-server)
     (reset! server nil)))
 
 (def app
   (-> handlers
       wrap-multipart-params))
 
+(def ssl
+  (netty/self-signed-ssl-context "localhost"
+                                 {:application-protocol-config
+                                  (netty/application-protocol-config [:http2])}))
+
+(defn start-server
+  ([] (start-server (env/get-server-port) (env/get-server-http2?)))
+  ([port http2?]
+   (storage/init)
+   (detector-worker/start!)
+   (reset! server
+           (http/start-server #'app {:port port
+                                     :max-request-body-size Integer/MAX_VALUE
+                                     :http-versions (if http2? [:http2] [:http1])
+                                     :force-h2c? http2? 
+                                     :ssl-context (if http2? ssl nil)}))))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& _]
-  (println "Hello, World!")
-  (println "http://localhost:8080/index.html")
-  (storage/init)
-  (detector-worker/start!)
-  (reset! server (run-server #'app {:port 8080 :max-body (* 1 1024 1024 1024)})))
-
+  (log/info "Hello, World!")
+  (log/info (str "http" (if (env/get-server-http2?) "s" "") "://localhost:8080/index.html"))
+  (start-server))
 
 ;; (-main)
 ;; (stop-server)
