@@ -3,7 +3,7 @@
  :deps {org.clojure/clojure {:mvn/version "1.12.4"}
         aleph/aleph {:mvn/version "0.9.5"}
         compojure/compojure {:mvn/version "1.7.2"}
-        one/convert {:local/root "lib/jfr-converter.jar"}
+        tools.profiler/jfr-converter {:mvn/version "4.3"}
         org.rocksdb/rocksdbjni$linux64 {:mvn/version "10.4.2"}
         org.rocksdb/rocksdbjni$osx {:mvn/version "10.4.2"}
         hiccup/hiccup {:mvn/version "2.0.0"}

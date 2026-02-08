@@ -120,9 +120,6 @@ If you need synthetic load, the repository includes [`test/BadPatternsDemo.java`
 java -agentpath:$(pwd)/lib/async-profiler-4.3-linux-x64/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
 ```
 
-Upload `profile.jfr` through the UI to experiment with the heatmaps. To preview a flamegraph locally without the web app, run
-`java -jar lib/jfr-converter.jar profile.jfr profile.html` and open the generated HTML file in a browser.
-
 ---
 
 ## API reference
