@@ -2,8 +2,6 @@ package com.example.mcpserver.controller;
 
 import com.example.mcpserver.dto.HeapHistogramResponseDto;
 import com.example.mcpserver.service.HeapDumpAnalyzerService;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,8 +23,11 @@ public class HeapDumpController {
     @PostMapping("/top-classes")
     public HeapHistogramResponseDto topClasses(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(name = "limit", defaultValue = "20") @Min(1) @Max(500) int limit
+            @RequestParam(name = "limit", defaultValue = "20") int limit
     ) {
+        if (limit < 1 || limit > 500) {
+            throw new IllegalArgumentException("limit must be between 1 and 500");
+        }
         var classes = analyzerService.topClasses(file, limit);
         return new HeapHistogramResponseDto(file.getOriginalFilename(), classes.size(), classes);
     }

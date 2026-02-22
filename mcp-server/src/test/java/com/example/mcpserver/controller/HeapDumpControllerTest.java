@@ -2,31 +2,39 @@ package com.example.mcpserver.controller;
 
 import com.example.mcpserver.dto.ClassHistogramEntryDto;
 import com.example.mcpserver.service.HeapDumpAnalyzerService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {HeapDumpController.class, ApiExceptionHandler.class})
 class HeapDumpControllerTest {
 
-    @Autowired
+    private HeapDumpAnalyzerService analyzerService;
     private MockMvc mockMvc;
 
-    @MockBean
-    private HeapDumpAnalyzerService analyzerService;
+    @BeforeEach
+    void setUp() {
+        analyzerService = mock(HeapDumpAnalyzerService.class);
+        var validator = new LocalValidatorFactoryBean();
+        validator.afterPropertiesSet();
+        mockMvc = MockMvcBuilders.standaloneSetup(new HeapDumpController(analyzerService))
+                .setControllerAdvice(new ApiExceptionHandler())
+                .setValidator(validator)
+                .build();
+    }
 
     @Test
     void topClassesShouldReturnHistogramResponse() throws Exception {
