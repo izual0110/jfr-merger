@@ -20,6 +20,21 @@ class HeapDumpControllerE2ETest {
     @LocalServerPort
     private int port;
 
+
+    @Test
+    void mcpMessageEndpointShouldBeExposed() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/mcp/message"))
+                .POST(HttpRequest.BodyPublishers.ofString("{}"))
+                .header("Content-Type", "application/json")
+                .build();
+
+        HttpResponse<String> response = HttpClient.newHttpClient()
+                .send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertThat(response.statusCode()).isNotEqualTo(404);
+    }
+
     @Test
     void topClassesShouldReturnBadRequestForInvalidLimit() throws IOException, InterruptedException {
         HttpResponse<String> response = sendMultipartRequest(0, "heap.hprof", "dummy".getBytes(StandardCharsets.UTF_8));
