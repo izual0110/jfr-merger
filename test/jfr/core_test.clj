@@ -45,3 +45,19 @@
           (core/stop-server)
           (is (nil? @core/server))
           (reset! core/server original-server))))))
+
+
+(deftest history-endpoints
+  (with-redefs [jfr.service/load-history (fn [] [{:uuid "abc" :name "demo"}])
+                jfr.service/save-history-name! (fn [uuid name] {:uuid uuid :name name})
+                jfr.service/clear-history! (fn [] nil)]
+    (let [get-response (core/app {:request-method :get
+                                  :uri "/api/history"})
+          post-response (core/app {:request-method :post
+                                   :uri "/api/history/abc/name"
+                                   :body (java.io.ByteArrayInputStream. (.getBytes "{\"name\":\"new\"}"))})
+          clear-response (core/app {:request-method :post
+                                    :uri "/api/history/clear"})]
+      (is (= 200 (:status get-response)))
+      (is (= 200 (:status post-response)))
+      (is (= 200 (:status clear-response))))))

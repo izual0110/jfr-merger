@@ -31,6 +31,22 @@
       {:status 404
        :body "Artifact not found"})))
 
+
+(defn- parse-json-body [req]
+  (when-let [body (:body req)]
+    (json/read-str (slurp body) :key-fn keyword)))
+
+(defn- history-name-response [uuid req]
+  (let [{:keys [name]} (parse-json-body req)
+        updated (service/save-history-name! uuid (or name ""))]
+    (if updated
+      {:status 200
+       :headers {"Content-Type" "application/json"}
+       :body (json/write-str updated)}
+      {:status 404
+       :headers {"Content-Type" "application/json"}
+       :body (json/write-str {:error "History item not found"})})))
+
 (defroutes handlers
   (GET "/" [] index)
   (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
@@ -69,6 +85,14 @@
   (GET "/api/storage/keys" [] {:status 200
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/write-str (storage/get-all-keys))})
+  (GET "/api/history" [] {:status 200
+                            :headers {"Content-Type" "application/json"}
+                            :body (json/write-str (service/load-history))})
+  (POST "/api/history/:uuid/name" [uuid :as req] (history-name-response uuid req))
+  (POST "/api/history/clear" [] (do (service/clear-history!)
+                                      {:status 200
+                                       :headers {"Content-Type" "application/json"}
+                                       :body (json/write-str {:ok true})}))
   (resources "/"))
 
 (defonce server (atom nil))

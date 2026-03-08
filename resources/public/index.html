@@ -486,6 +486,7 @@
   const UPLOAD_URL = '/api/convertor';
   // 2) Keys in localStorage:
   const LS_KEY = 'htmlLinksHistory';
+  const HISTORY_API = '/api/history';
 
   // 3) DOM elements:
   const drop = document.getElementById('drop');
@@ -624,14 +625,31 @@
     return normalized;
   }
   window.applyConvertorResponse = applyConvertorResponse;
-  function clearHistory(){ saveHistory([]); renderHistory(); }
-  function persistHistoryName(uuid, newName){
+  async function clearHistory(){
+    saveHistory([]);
+    renderHistory();
+    try{
+      await fetch(HISTORY_API + '/clear', {method:'POST'});
+    }catch(err){
+      console.warn('Failed to clear server history:', err);
+    }
+  }
+  async function persistHistoryName(uuid, newName){
     const arr = loadHistory();
     const idx = arr.findIndex(item => item.uuid === uuid);
     if(idx === -1) return;
     arr[idx].name = newName;
     saveHistory(arr);
     renderHistory();
+    try{
+      await fetch(`${HISTORY_API}/${encodeURIComponent(uuid)}/name`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: newName})
+      });
+    }catch(err){
+      console.warn('Failed to persist name on server:', err);
+    }
   }
   function placeCaretAtEnd(el){
     const range = document.createRange();
@@ -670,6 +688,20 @@
       persistHistoryName(uuid, storedValue);
     }
   }
+  async function syncHistoryFromServer(){
+    try{
+      const response = await fetch(HISTORY_API);
+      if(!response.ok) throw new Error('HTTP ' + response.status);
+      const serverHistory = await response.json();
+      if(Array.isArray(serverHistory)){
+        saveHistory(serverHistory);
+        renderHistory();
+      }
+    }catch(err){
+      console.warn('Failed to load history from server:', err);
+    }
+  }
+
   function renderHistory(){
     const arr = loadHistory();
     historyEl.innerHTML = '';
@@ -836,6 +868,7 @@
 
   // Initialization
   renderHistory();
+  syncHistoryFromServer();
 })();
 </script>
 <script>
