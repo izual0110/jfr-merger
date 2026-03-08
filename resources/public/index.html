@@ -127,6 +127,26 @@
 
     .flame-label { font-weight: 600; }
 
+    .path-input {
+      width: 100%;
+      margin-top: 12px;
+      min-height: 88px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0b1220;
+      color: var(--fg);
+      padding: 10px;
+      resize: vertical;
+      font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .path-help {
+      display: block;
+      margin-top: 6px;
+      color: var(--mut);
+      font-size: 12px;
+    }
+
     .history {
       border: 2px dashed #334155;
       border-radius: 14px;
@@ -433,10 +453,13 @@
   <div class="grid">
     <section class="panel" aria-label="File upload">
       <h1>File Upload</h1>
-      <p>Drag and drop files or select manually. Upload via <code>fetch</code>.</p>
+      <p>Drag and drop files, select manually, or paste filesystem paths. Upload via <code>fetch</code>.</p>
       <p><a href="/heapdump.html" class="link-muted">Heap dump stats (JOL)</a></p>
 
       <input id="fileInput" type="file" name="files" multiple hidden>
+      <textarea id="filePaths" class="path-input" placeholder="/var/log/profile-1.jfr
+/var/log/profile-2.jfr" aria-label="JFR file paths"></textarea>
+      <small class="path-help">You can provide one filesystem path per line and/or upload files.</small>
 
       <div id="drop" class="drop" tabindex="0" role="button" aria-label="Drop area for files">
         Drag files here or click
@@ -499,6 +522,7 @@
   const clearBtn = document.getElementById('clear');
   const flameCheckbox = document.getElementById('addFlamegraph');
   const detectorCheckbox = document.getElementById('addDetector');
+  const filePathsInput = document.getElementById('filePaths');
   const STATS_TITLE_MAX = 400;
   const setStatus = (txt = '') => { status.textContent = txt; };
   const resetProgress = () => { prog.hidden = true; prog.value = 0; };
@@ -786,7 +810,8 @@
 
   // Send files via fetch (async)
   async function sendFiles(){
-    if(!fileInput.files.length){ alert('Please select files first.'); return; }
+    const rawPaths = filePathsInput.value.trim();
+    if(!fileInput.files.length && !rawPaths){ alert('Please select files or provide paths first.'); return; }
     const currentBatch = lastSelectedBatchId; // remember what exactly we send
     const addFlamegraph = flameCheckbox.checked;
     const addDetector = detectorCheckbox.checked;
@@ -799,6 +824,7 @@
       [...fileInput.files].forEach(f => fd.append('files', f, f.name));
       fd.append('addFlamegraph', addFlamegraph ? 'true' : 'false');
       fd.append('addDetector', addDetector ? 'true' : 'false');
+      if(rawPaths) fd.append('filePaths', rawPaths);
 
       const resp = await fetch(UPLOAD_URL, {method:'POST', body: fd});
       clearInterval(t); prog.value = 100;
