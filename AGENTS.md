@@ -10,7 +10,7 @@
 - Static assets and config sit in `resources/`; integration assets (e.g., async-profiler jars) go into `lib/` (git-ignored).
 
 ## Local setup checklist
-1. Install **Java 17+** and the **Clojure CLI tools** (e.g., `brew install clojure/tools/deps` on macOS or follow https://clojure.org/guides/install_clojure for Linux/Windows).
+1. Install **Java 26+** and the **Clojure CLI tools** (e.g., `brew install clojure/tools/deps` on macOS or follow https://clojure.org/guides/install_clojure for Linux/Windows).
 2. Optional but recommended: create `storage/` with subfolders `jfrs/` and `temp/` if you tweak `resources/config.edn`.
 3. **Before running tests**, execute `./prepare-env.sh` to install toolchain prerequisites (rlwrap, Clojure CLI, converters).
 
