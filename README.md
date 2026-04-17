@@ -66,8 +66,8 @@ clj -X:uberjar
 clj -T:build uber
 java -jar target/jfr-merger-0.1.1.jar
 
-# update deps
-clj -Moutdated --write
+# update deps ("upgrade" not worked)
+clj -Moutdated :upgrade true
 ```
 
 Once the server is running, open [http://localhost:8080/index.html](http://localhost:8080/index.html) in your browser.
