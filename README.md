@@ -22,7 +22,7 @@
 
 ### Prerequisites
 
-- Java 17 or newer (required by async-profiler tooling).
+- Java 26 or newer (required by async-profiler tooling).
 - [Clojure CLI tools](https://clojure.org/guides/getting_started) for local development.
 - `curl` and `tar` for fetching async-profiler artifacts.
 
