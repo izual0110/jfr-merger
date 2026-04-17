@@ -31,5 +31,5 @@
          :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
          :extra-deps {org.clojure/tools.namespace {:mvn/version "1.5.0"}}
          :main-opts ["-m" "test-runner"]}
-  :outdated {:replace-deps {olical/depot {:mvn/version "2.4.1"}}
-              :main-opts ["-m" "depot.outdated.main"]}}}
+  :outdated {:replace-deps {com.github.liquidz/antq {:mvn/version "2.11.1272"}}
+             :main-opts ["-m" "antq.core"]}}}
