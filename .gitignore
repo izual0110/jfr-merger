@@ -22,6 +22,7 @@ pom.xml.asc
 .lsp/
 .clj-kondo/
 .calva/
+jfr-merger.iml
 
 ### IntelliJ IDEA ###
 .idea/
