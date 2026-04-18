@@ -7,8 +7,9 @@ RUN curl -L -O https://github.com/clojure/brew-install/releases/download/1.12.4.
     chmod +x linux-install.sh && \
     mkdir -p /app/clojure && \
     ./linux-install.sh -p /app/clojure && \
-    rm linux-install.sh
-
+    rm linux-install.sh && \
+    mkdir -p /app/lib && \
+    curl -L -o /app/lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/nightly/jfr-converter.jar
 WORKDIR /app
 
 FROM clojure AS builder
