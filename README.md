@@ -22,7 +22,7 @@
 
 ### Prerequisites
 
-- Java 17 or newer (required by async-profiler tooling).
+- Java 26 or newer (required by async-profiler tooling).
 - [Clojure CLI tools](https://clojure.org/guides/getting_started) for local development.
 - `curl` and `tar` for fetching async-profiler artifacts.
 
@@ -67,7 +67,7 @@ clj -T:build uber
 java -jar target/jfr-merger-0.1.1.jar
 
 # update deps
-clj -Moutdated --write
+clj -Moutdated --upgrade --force 
 ```
 
 Once the server is running, open [http://localhost:8080/index.html](http://localhost:8080/index.html) in your browser.
@@ -119,9 +119,6 @@ If you need synthetic load, the repository includes [`test/BadPatternsDemo.java`
 ```bash
 java -agentpath:$(pwd)/lib/async-profiler-4.3-linux-x64/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
 ```
-
-Upload `profile.jfr` through the UI to experiment with the heatmaps. To preview a flamegraph locally without the web app, run
-`java -jar lib/jfr-converter.jar profile.jfr profile.html` and open the generated HTML file in a browser.
 
 ---
 
