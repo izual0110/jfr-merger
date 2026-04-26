@@ -485,6 +485,7 @@
   // 1) Settings. Set your real endpoint here:
   const UPLOAD_URL = '/api/convertor';
   const HISTORY_API = '/api/history';
+  const CLEAR_API = '/api/clear';
 
   // 3) DOM elements:
   const drop = document.getElementById('drop');
@@ -572,10 +573,10 @@
       return [];
     }
   }
-  async function clearHistory(){
+  async function clearDatabase(){
     renderHistory();
     try{
-      await fetch(HISTORY_API + '/clear', {method:'POST'});
+      await fetch(CLEAR_API, {method:'POST'});
     }catch(err){
       console.warn('Failed to clear server history:', err);
     }
@@ -784,7 +785,7 @@
   pick.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => setFiles(fileInput.files));
   sendBtn.addEventListener('click', sendFiles);
-  clearBtn.addEventListener('click', clearHistory);
+  clearBtn.addEventListener('click', clearDatabase);
 
   // Initialization
   renderHistory();

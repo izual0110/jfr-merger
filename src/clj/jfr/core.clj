@@ -70,10 +70,7 @@
   (GET "/api/history" [] {:status 200
                             :headers {"Content-Type" "application/json"}
                             :body (json/write-str (service/load-history))})
-  (POST "/api/history/clear" [] (do (service/clear-history!)
-                                      {:status 200
-                                       :headers {"Content-Type" "application/json"}
-                                       :body (json/write-str {:ok true})}))
+  (POST "/api/clear" [] (do (service/clear!) {:status 201}))
   (resources "/"))
 
 (defonce server (atom nil))

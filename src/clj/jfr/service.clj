@@ -85,10 +85,9 @@
        (sort-by :created-at >)
        vec))
 
-(defn clear-history!
+(defn clear!
   []
-  (doseq [key (storage/get-all-keys)
-          :when (string/starts-with? key history-prefix)]
+  (doseq [key (storage/get-all-keys)]
     (storage/delete key)))
 
 (defn- write-detector-result! [uuid data]
