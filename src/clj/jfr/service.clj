@@ -77,8 +77,7 @@
 
 (defn load-history
   []
-  (->> (storage/get-all-keys)
-       (filter #(string/starts-with? % history-prefix))
+  (->> (storage/get-all-keys history-prefix)
        (keep (fn [key]
                (when-let [bytes (storage/load-bytes key)]
                  (json/read-str (String. bytes StandardCharsets/UTF_8) :key-fn keyword))))

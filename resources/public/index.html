@@ -574,9 +574,10 @@
     }
   }
   async function clearDatabase(){
-    renderHistory();
     try{
-      await fetch(CLEAR_API, {method:'POST'});
+      fetch(CLEAR_API, {method:'POST'}).then((_)=>{
+        renderHistory();
+      });
     }catch(err){
       console.warn('Failed to clear server history:', err);
     }
