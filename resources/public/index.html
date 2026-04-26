@@ -462,7 +462,7 @@
       <div class="history">
         <div class="row history-header">
           <strong>History</strong>
-          <button type="button" id="clear" class="ghost">Clear</button>
+          <button type="button" id="clear" class="ghost">Clear DataBase</button>
         </div>
         <ol id="history"></ol>
       </div>
@@ -484,8 +484,6 @@
   'use strict';
   // 1) Settings. Set your real endpoint here:
   const UPLOAD_URL = '/api/convertor';
-  // 2) Keys in localStorage:
-  const LS_KEY = 'htmlLinksHistory';
   const HISTORY_API = '/api/history';
 
   // 3) DOM elements:
@@ -563,92 +561,23 @@
     return nameSpan;
   };
 
-  // === Link history on the right ===
-  function loadHistory(){
+    // === Link history on the right ===
+    async function loadHistory(){
     try{
-      const raw = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-      if(!Array.isArray(raw)) return [];
-      return raw.map(item => {
-        if(!item || typeof item !== 'object' || !item.uuid) return null;
-        return {
-          ...item,
-          name: typeof item.name === 'string' ? item.name : '',
-          flame: Boolean(item.flame)
-        };
-      }).filter(Boolean);
-    }catch{
+      const response = await fetch(HISTORY_API);
+      if(!response.ok) throw new Error('HTTP ' + response.status);
+      return response.json();
+    }catch(err){
+      console.warn('Failed to load history from server:', err);
       return [];
     }
   }
-  function saveHistory(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
-  function addToHistory(obj){
-    if(!obj || !obj.uuid) return;
-    const arr = loadHistory();
-    const idx = arr.findIndex(x => x.uuid === obj.uuid);
-    if(idx !== -1){
-      const existing = arr[idx];
-      const updated = {
-        ...existing,
-        ...obj,
-        name: existing.name || ''
-      };
-      arr.splice(idx, 1);
-      arr.unshift(updated);
-    } else {
-      const entry = {
-        ...obj,
-        name: typeof obj.name === 'string' ? obj.name : '',
-        flame: Boolean(obj.flame)
-      };
-      arr.unshift(entry);
-    }
-    saveHistory(arr);
-    renderHistory();
-  }
-  function normalizeConvertorPayload(raw){
-    const payload = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    if(!payload || typeof payload !== 'object') throw new Error('Payload must be an object or JSON string');
-    if(!payload.uuid) throw new Error('Payload must include a uuid field');
-    return {
-      uuid: String(payload.uuid),
-      stats: payload.stats,
-      flame: Boolean(payload.flame),
-      detector: Boolean(payload.detector),
-      name: typeof payload.name === 'string' ? payload.name : ''
-    };
-  }
-  function applyConvertorResponse(rawPayload, {statusMessage = 'Simulated response applied.'} = {}){
-    const normalized = normalizeConvertorPayload(rawPayload);
-    addToHistory(normalized);
-    setStatus(statusMessage);
-    resetProgress();
-    return normalized;
-  }
-  window.applyConvertorResponse = applyConvertorResponse;
   async function clearHistory(){
-    saveHistory([]);
     renderHistory();
     try{
       await fetch(HISTORY_API + '/clear', {method:'POST'});
     }catch(err){
       console.warn('Failed to clear server history:', err);
-    }
-  }
-  async function persistHistoryName(uuid, newName){
-    const arr = loadHistory();
-    const idx = arr.findIndex(item => item.uuid === uuid);
-    if(idx === -1) return;
-    arr[idx].name = newName;
-    saveHistory(arr);
-    renderHistory();
-    try{
-      await fetch(`${HISTORY_API}/${encodeURIComponent(uuid)}/name`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name: newName})
-      });
-    }catch(err){
-      console.warn('Failed to persist name on server:', err);
     }
   }
   function placeCaretAtEnd(el){
@@ -688,31 +617,20 @@
       persistHistoryName(uuid, storedValue);
     }
   }
-  async function syncHistoryFromServer(){
-    try{
-      const response = await fetch(HISTORY_API);
-      if(!response.ok) throw new Error('HTTP ' + response.status);
-      const serverHistory = await response.json();
-      if(Array.isArray(serverHistory)){
-        saveHistory(serverHistory);
-        renderHistory();
-      }
-    }catch(err){
-      console.warn('Failed to load history from server:', err);
-    }
-  }
 
   function renderHistory(){
-    const arr = loadHistory();
     historyEl.innerHTML = '';
-    if(arr.length === 0){
+    const arr = loadHistory().then((history) => {
+      if(history.length === 0){
       const li = document.createElement('li');
       li.textContent = 'No links yet';
       historyEl.append(li);
       return;
     }
     const frag = document.createDocumentFragment();
-    arr.forEach(item => {
+    console.log(history);
+
+    history.forEach(item => {
       const li = document.createElement('li');
 
       const uuidSpan = document.createElement('span');
@@ -769,6 +687,7 @@
       frag.append(li);
     });
     historyEl.append(frag);
+    });
   }
 
   // === File handling on the left ===
@@ -836,11 +755,12 @@
       clearInterval(t); prog.value = 100;
       if(!resp.ok) throw new Error('HTTP '+resp.status);
 
-      const result = await resp.json().catch(()=>null);
-      if(!result || !result.uuid){
-        setStatus('Uploaded, but the server did not return a valid uuid.');
+      if(resp.status === 201){
+        renderHistory();
+        setStatus('Done');
+        resetProgress();
       } else {
-        applyConvertorResponse(result, {statusMessage: 'Done'});
+        setStatus('Something wrong!');
       }
 
       // Do not remove current items immediately — only after 10 seconds
@@ -868,7 +788,6 @@
 
   // Initialization
   renderHistory();
-  syncHistoryFromServer();
 })();
 </script>
 <script>

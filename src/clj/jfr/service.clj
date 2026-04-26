@@ -85,11 +85,6 @@
        (sort-by :created-at >)
        vec))
 
-(defn save-history-name!
-  [uuid new-name]
-  (when-let [existing (first (filter #(= uuid (:uuid %)) (load-history)))]
-    (save-history-item! (assoc existing :name (or new-name "")))))
-
 (defn clear-history!
   []
   (doseq [key (storage/get-all-keys)
@@ -171,4 +166,4 @@
                            :stats stats
                            :flame add-flame?
                            :detector add-detector?})
-      [uuid stats add-flame? add-detector?])))
+      uuid)))
