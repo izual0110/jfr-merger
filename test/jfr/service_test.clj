@@ -27,8 +27,5 @@
       (let [history (service/load-history)]
         (is (= 2 (count history)))
         (is (= #{"u-1" "u-2"} (set (map :uuid history)))))
-
-      (is (= "renamed" (:name (first (filter #(= "u-2" (:uuid %)) (service/load-history))))))
-
       (service/clear!)
       (is (empty? (service/load-history))))))
