@@ -3,6 +3,7 @@
            (one.convert JfrToHeatmap JfrToFlame Arguments)
            (java.io ByteArrayOutputStream)
            (one.jfr JfrReader)
+           (java.nio.file Files Paths)
            (java.nio.charset StandardCharsets))
   (:require [clojure.java.io :as io]
             [clojure.data.json :as json]
@@ -11,7 +12,8 @@
             [jfr.utils :as utils]
             [jfr.environ :as env]
             [jfr.detector.detector :as detector]
-            [jfr.detector.worker :as detector-worker]))
+            [jfr.detector.worker :as detector-worker]
+            [clojure.string :as string]))
 
 (defn- get-temp-dir [] (env/temp-dir))
 
@@ -98,22 +100,55 @@
                (write-detector-result! uuid result)))))))
     (log/info (str "Scheduled detector job for " uuid " at " scheduled-at))))
 
+(defn- parse-filesystem-paths [raw-paths]
+  (->> (utils/normalize-vector raw-paths)
+       (mapcat #(string/split (str %) #"\r?\n"))
+       (map string/trim)
+       (remove string/blank?)
+       vec))
+
+(defn- ensure-readable-jfr! [path-str]
+  (let [path (Paths/get path-str (make-array String 0))]
+    (when-not (Files/exists path (make-array java.nio.file.LinkOption 0))
+      (throw (ex-info "Filesystem JFR file does not exist"
+                      {:path path-str
+                       :reason :file-not-found})))
+    (when-not (Files/isRegularFile path (make-array java.nio.file.LinkOption 0))
+      (throw (ex-info "Filesystem JFR path must point to a file"
+                      {:path path-str
+                       :reason :not-a-file})))
+    (when-not (Files/isReadable path)
+      (throw (ex-info "Filesystem JFR file is not readable"
+                      {:path path-str
+                       :reason :not-readable})))
+    path-str))
+
+(defn- collect-jfr-inputs [{:strs [files filePaths]}]
+  (let [uploaded-paths (->> (utils/normalize-vector files)
+                            (filter #(and (map? %) (contains? % :tempfile)))
+                            (mapv (comp str :tempfile)))
+        fs-paths (->> (parse-filesystem-paths filePaths)
+                      (mapv ensure-readable-jfr!))
+        all-inputs (into uploaded-paths fs-paths)]
+    (when (empty? all-inputs)
+      (throw (ex-info "At least one JFR file must be provided"
+                      {:reason :missing-inputs})))
+    all-inputs))
+
 (defn generate-artifacts [{:keys [params]}]
   (let [uuid (str (UUID/randomUUID))
         temp-dir (get-temp-dir)
         merged-path (str temp-dir "/" uuid ".jfr")
-        files (->> (get params "files")
-                   utils/normalize-vector
-                   (filterv #(and (map? %) (contains? % :tempfile))))
+        inputs (collect-jfr-inputs params)
         add-flame? (= "true" (get params "addFlamegraph"))
         add-detector? (= "true" (get params "addDetector"))]
     (io/make-parents merged-path)
     (log/info (str "UUID: " uuid " "
                    (if add-flame? "with flamegraph" "without flamegraph")
-                   "\n\t\tFiles to merge: " files))
+                   "\n\t\tFiles to merge: " inputs))
     (with-open [out (io/output-stream merged-path)]
-      (doseq [file files]
-        (with-open [in (io/input-stream (:tempfile file))]
+      (doseq [input inputs]
+        (with-open [in (io/input-stream input)]
           (io/copy in out))))
     (doseq [{:keys [suffix flag]} [{:suffix "" :flag nil}
                                    {:suffix "-cpu" :flag "--cpu"}

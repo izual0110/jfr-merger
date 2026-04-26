@@ -34,10 +34,17 @@
 (defroutes handlers
   (GET "/" [] index)
   (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
-  (POST "/api/convertor" req (let [[uuid stats add-flame? add-detector?] (service/generate-artifacts req)]
-                               {:status 200
-                                :headers {"Content-Type" "application/json"}
-                                :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})}))
+  (POST "/api/convertor" req
+    (try
+      (let [[uuid stats add-flame? add-detector?] (service/generate-artifacts req)]
+        {:status 200
+         :headers {"Content-Type" "application/json"}
+         :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})})
+      (catch clojure.lang.ExceptionInfo e
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/write-str {:error (.getMessage e)
+                                :details (ex-data e)})})))
   (POST "/api/heapdump" req (let [response (heapdump/handle-heapdump-upload req)]
                              (try
                                {:status 200
