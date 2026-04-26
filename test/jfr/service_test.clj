@@ -30,5 +30,5 @@
 
       (is (= "renamed" (:name (first (filter #(= "u-2" (:uuid %)) (service/load-history))))))
 
-      (service/clear-history!)
+      (service/clear!)
       (is (empty? (service/load-history))))))

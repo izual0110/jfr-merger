@@ -5,7 +5,10 @@
    [jfr.detector.detector :as detector]
    [jfr.detector.report :as report]
    [hiccup2.core :as h]
-   [clojure.tools.logging :as log])
+   [clojure.tools.logging :as log] 
+   [clojure.tools.namespace.find :as ns-find]
+   [clojure.java.io :as io]
+   [clojure.test :as t])
   (:import [java.lang NullPointerException]))
 
 
@@ -74,3 +77,12 @@ report
 count
 
 (str (count (seq ["123"])))
+
+
+;;;;;; TESTS
+(let [dirs [(io/file "test")]
+      nss (ns-find/find-namespaces-in-dir (first dirs))]
+  (log/infof "Running tests in namespaces: %s" (vec nss))
+  (apply require nss)
+  (let [{:keys [fail error]} (apply t/run-tests nss)]
+    (println (if (pos? (+ (or fail 0) (or error 0))) 1 0))))

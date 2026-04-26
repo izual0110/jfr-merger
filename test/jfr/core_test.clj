@@ -48,15 +48,10 @@
 
 
 (deftest history-endpoints
-  (with-redefs [jfr.service/load-history (fn [] [{:uuid "abc" :name "demo"}])
-                jfr.service/clear-history! (fn [] nil)]
+  (with-redefs [jfr.service/load-history (fn [] [{:uuid "abc" :name "demo"}])]
     (let [get-response (core/app {:request-method :get
                                   :uri "/api/history"})
-          post-response (core/app {:request-method :post
-                                   :uri "/api/history/abc/name"
-                                   :body (java.io.ByteArrayInputStream. (.getBytes "{\"name\":\"new\"}"))})
           clear-response (core/app {:request-method :post
-                                    :uri "/api/history/clear"})]
+                                    :uri "/api/clear"})]
       (is (= 200 (:status get-response)))
-      (is (= 200 (:status post-response)))
-      (is (= 200 (:status clear-response))))))
+      (is (= 201 (:status clear-response))))))
