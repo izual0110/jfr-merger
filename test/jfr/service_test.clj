@@ -17,7 +17,9 @@
 
 (deftest history-metadata-roundtrip
   (let [db (atom {})]
-    (with-redefs [storage/get-all-keys (fn [] (keys @db))
+    (with-redefs [storage/get-all-keys (fn
+                                         ([] (storage/get-all-keys nil)) 
+                                         ([_] (keys @db)))
                   storage/load-bytes (fn [k] (get @db k))
                   storage/save-bytes (fn [k v] (swap! db assoc k v))
                   storage/delete (fn [k] (swap! db dissoc k))]
