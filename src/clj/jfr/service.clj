@@ -7,6 +7,7 @@
   (:require [clojure.java.io :as io]
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]
+            [clojure.string :as string]
             [jfr.storage :as storage]
             [jfr.utils :as utils]
             [jfr.environ :as env]
@@ -53,6 +54,46 @@
 
 (defn- detector-key [uuid]
   (str uuid "-detector"))
+
+(def ^:private history-prefix "meta-history/")
+
+(defn- history-key [uuid]
+  (str history-prefix uuid))
+
+(defn- normalize-history-item [item]
+  {:uuid (str (:uuid item))
+   :stats (:stats item)
+   :flame (boolean (:flame item))
+   :detector (boolean (:detector item))
+   :name (if (string? (:name item)) (:name item) "")
+   :created-at (or (:created-at item) (System/currentTimeMillis))})
+
+(defn save-history-item!
+  [item]
+  (let [{:keys [uuid] :as normalized} (normalize-history-item item)
+        bytes (.getBytes (json/write-str normalized) StandardCharsets/UTF_8)]
+    (storage/save-bytes (history-key uuid) bytes)
+    normalized))
+
+(defn load-history
+  []
+  (->> (storage/get-all-keys history-prefix)
+       (keep (fn [key]
+               (when-let [bytes (storage/load-bytes key)]
+                 (json/read-str (String. bytes StandardCharsets/UTF_8) :key-fn keyword))))
+       (sort-by :created-at >)
+       vec))
+
+(defn clear!
+  []
+  (doseq [key (storage/get-all-keys)]
+    (storage/delete key)))
+
+(defn save-history-name!
+  [uuid new-name]
+  (when-let [bytes (storage/load-bytes (str history-prefix uuid))]
+    (let [existing (json/read-str (String. bytes StandardCharsets/UTF_8) :key-fn keyword)]
+      (save-history-item! (assoc existing :name (or new-name ""))))))
 
 (defn- write-detector-result! [uuid data]
   (let [json-str (json/write-str data)
@@ -124,4 +165,9 @@
         (->> (convert-flamegraph merged-path flag)
              (storage/save-bytes (str uuid "-flame" suffix)))))
     (when add-detector? (schedule-detector! uuid merged-path))
-    [uuid (jfr-stats merged-path) add-flame? add-detector?]))
+    (let [stats (jfr-stats merged-path)]
+      (save-history-item! {:uuid uuid
+                           :stats stats
+                           :flame add-flame?
+                           :detector add-detector?})
+      uuid)))
