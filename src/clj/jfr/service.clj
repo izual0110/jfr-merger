@@ -89,6 +89,12 @@
   (doseq [key (storage/get-all-keys)]
     (storage/delete key)))
 
+(defn save-history-name!
+  [uuid new-name]
+  (when-let [bytes (storage/load-bytes (str history-prefix uuid))]
+    (let [existing (json/read-str (String. bytes StandardCharsets/UTF_8) :key-fn keyword)]
+      (save-history-item! (assoc existing :name (or new-name ""))))))
+
 (defn- write-detector-result! [uuid data]
   (let [json-str (json/write-str data)
         bytes (.getBytes json-str StandardCharsets/UTF_8)]

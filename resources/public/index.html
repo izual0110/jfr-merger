@@ -582,6 +582,21 @@
       console.warn('Failed to clear server history:', err);
     }
   }
+
+  async function persistHistoryName(uuid, newName){
+    try{
+      await fetch(`${HISTORY_API}/${encodeURIComponent(uuid)}/name`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: newName})
+      }).then((_)=>{
+        renderHistory();
+      });
+    }catch(err){
+      console.warn('Failed to persist name on server:', err);
+    }
+  }
+
   function placeCaretAtEnd(el){
     const range = document.createRange();
     range.selectNodeContents(el);

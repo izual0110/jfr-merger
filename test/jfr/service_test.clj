@@ -18,7 +18,7 @@
 (deftest history-metadata-roundtrip
   (let [db (atom {})]
     (with-redefs [storage/get-all-keys (fn
-                                         ([] (storage/get-all-keys nil)) 
+                                         ([] (storage/get-all-keys nil))
                                          ([_] (keys @db)))
                   storage/load-bytes (fn [k] (get @db k))
                   storage/save-bytes (fn [k v] (swap! db assoc k v))
@@ -29,5 +29,12 @@
       (let [history (service/load-history)]
         (is (= 2 (count history)))
         (is (= #{"u-1" "u-2"} (set (map :uuid history)))))
+
+      (service/save-history-name! "u-1" "changed")
+
+      (let [history (service/load-history)
+            u2 (first (filter #(= (:uuid %) "u-1") history))]
+        (is (= "changed" (:name u2))))
+
       (service/clear!)
       (is (empty? (service/load-history))))))
