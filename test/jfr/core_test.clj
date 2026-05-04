@@ -55,3 +55,10 @@
                                     :uri "/api/clear"})]
       (is (= 200 (:status get-response)))
       (is (= 201 (:status clear-response))))))
+
+(deftest heapdump-history-endpoint
+  (with-redefs [jfr.heapdump/load-heapdump-history (fn [] [{:name "heap.hprof" :created-at 1700000000000 :stats "ok"}])]
+    (let [response (core/app {:request-method :get
+                              :uri "/api/history-heapdump-stats"})]
+      (is (= 200 (:status response)))
+      (is (.contains (str (:body response)) "heap.hprof")))))
