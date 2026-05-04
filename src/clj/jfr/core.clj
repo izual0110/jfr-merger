@@ -84,6 +84,9 @@
   (GET "/api/history" [] {:status 200
                             :headers {"Content-Type" "application/json"}
                             :body (json/write-str (service/load-history))}) 
+  (GET "/api/history-heapdump-stats" [] {:status 200
+                                           :headers {"Content-Type" "application/json"}
+                                           :body (json/write-str (heapdump/load-heapdump-history))})
   (POST "/api/history/:uuid/name" [uuid :as req] (history-name-response uuid req))
   (POST "/api/clear" [] (do (service/clear!) {:status 201}))
   (resources "/"))
@@ -127,4 +130,3 @@
 
 ;; (-main)
 ;; (stop-server)
-

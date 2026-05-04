@@ -84,6 +84,23 @@
 
     a { color: #93c5fd; text-decoration: none; }
     a:hover { text-decoration: underline; }
+
+    .history {
+      margin-top: 16px;
+      border-top: 1px solid #223;
+      padding-top: 12px;
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .history-item {
+      padding: 8px 10px;
+      border: 1px solid #223;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background: #0b1325;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -101,6 +118,10 @@
     <progress id="progress" max="100" value="0" hidden></progress>
     <div id="status" class="status"></div>
     <pre id="output" class="output" aria-live="polite"></pre>
+    <div class="history">
+      <h2>history-heapdump-stats</h2>
+      <div id="history" class="status">Loading…</div>
+    </div>
   </section>
 
 <script>
@@ -113,6 +134,7 @@
   const status = document.getElementById('status');
   const output = document.getElementById('output');
   const progress = document.getElementById('progress');
+  const history = document.getElementById('history');
 
   let selectedFile = null;
   let bytesSent = 0;
@@ -120,6 +142,37 @@
   const setStatus = (text) => { status.textContent = text; };
   const resetOutput = () => { output.textContent = ''; };
   const uploadUrl = () => `${location.origin}/api/heapdump`;
+  const historyUrl = () => `${location.origin}/api/history-heapdump-stats`;
+
+  const formatDate = (millis) => new Date(millis).toLocaleString();
+
+  const loadHistory = async () => {
+    try {
+      const response = await fetch(historyUrl());
+      if (!response.ok) {
+        history.textContent = 'Failed to load history.';
+        return;
+      }
+      const items = await response.json();
+      if (!items.length) {
+        history.textContent = 'No heapdump history yet.';
+        return;
+      }
+      history.innerHTML = '';
+      items.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'history-item';
+        row.textContent = `${item.name} — ${formatDate(item.createdAt || item['created-at'])}`;
+        row.addEventListener('click', () => {
+          output.textContent = item.stats;
+          setStatus(`Loaded from history: ${item.name}`);
+        });
+        history.appendChild(row);
+      });
+    } catch (_err) {
+      history.textContent = 'Failed to load history.';
+    }
+  };
 
   pickBtn.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (event) => {
@@ -157,12 +210,14 @@
       }
       setStatus('Done.');
       output.textContent = await response.text();
+      await loadHistory();
     } catch (error) {
       setStatus(`Error: ${error.message || 'Upload failed'}`);
     }
   };
 
   sendBtn.addEventListener('click', sendHeapdump);
+  loadHistory();
 })();
 </script>
 </body>
