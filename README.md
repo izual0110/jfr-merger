@@ -28,16 +28,28 @@
 
 ### 1. Clone and bootstrap dependencies
 
+> Linux
 ```bash
 cd /path/to/workspace
 git clone https://github.com/izual0110/jfr-merger.git
 cd jfr-merger
 
 # Download the async-profiler converter jars used during heatmap generation
-mkdir -p lib
-curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.3/jfr-converter.jar
-curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.3/async-profiler-4.3-linux-x64.tar.gz" | tar -xz -C lib
+mkdir -p lib/async-profiler
+curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.4/jfr-converter.jar
+curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.4/async-profiler-4.4-linux-x64.tar.gz" | tar -xz --strip-components=1 -C lib/async-profiler
 ```
+
+> Macos
+```bash
+cd /path/to/workspace
+git clone https://github.com/izual0110/jfr-merger.git
+cd jfr-merger
+
+# Download the async-profiler converter jars used during heatmap generation
+mkdir -p lib/async-profiler
+curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.4/jfr-converter.jar
+curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.4/async-profiler-4.4-macos.zip" | tar -xz --strip-components=1 -C lib/async-profiler
 
 ### 2. Configure storage paths (optional)
 
@@ -116,8 +128,14 @@ docker compose up --build
 
 If you need synthetic load, the repository includes [`test/BadPatternsDemo.java`](test/BadPatternsDemo.java):
 
+> Linux
 ```bash
-java -agentpath:$(pwd)/lib/async-profiler-4.3-linux-x64/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
+java -agentpath:$(pwd)/lib/async-profiler/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
+```
+
+> Macos
+```bash
+java -agentpath:$(pwd)/lib/async-profiler/lib/libasyncProfiler.dylib=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
 ```
 
 ---
