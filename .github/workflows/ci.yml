@@ -10,9 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.0.0
+        uses: docker/setup-buildx-action@v4.1.0
 
       - name: Cache Docker layers
         uses: actions/cache@v5.0.5
@@ -21,7 +21,6 @@ jobs:
           key: buildx-cache-${{ hashFiles('Dockerfile') }}
           restore-keys: |
             buildx-cache-
-          
 
       - name: Prepare Maven cache directory
         run: |
@@ -37,7 +36,7 @@ jobs:
 
       - name: Check Clojure cache before tests
         run: |
-          if find ~/.m2 -path '*org/clojure/clojure/1.12.4/clojure-1.12.4.pom' -print -quit | grep -q .; then
+          if find ~/.m2 -path '*org/clojure/clojure/1.12.5/clojure-1.12.5.pom' -print -quit | grep -q .; then
             echo "org/clojure dependency already cached"
           else
             echo "org/clojure dependency missing from cache"
@@ -62,7 +61,7 @@ jobs:
 
       - name: Check Clojure cache after build
         run: |
-          if find ~/.m2 -path '*org/clojure/clojure/1.12.4/clojure-1.12.4.pom' -print -quit | grep -q .; then
+          if find ~/.m2 -path '*org/clojure/clojure/1.12.5/clojure-1.12.5.pom' -print -quit | grep -q .; then
             echo "org/clojure dependency cached"
           else
             echo "org/clojure dependency still missing"
