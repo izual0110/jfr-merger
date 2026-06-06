@@ -1,5 +1,6 @@
 (ns jfr.storage
-  (:import (org.rocksdb RocksDB Options CompressionType))
+  (:import (org.rocksdb RocksDB Options CompressionType)
+           (java.nio.charset StandardCharsets))
   (:require [jfr.environ :as env]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]))
@@ -57,19 +58,42 @@
                  "rocksdb.size-all-mem-tables"]] 
            (into {} (map (fn [p] [p (.getProperty db p)]) props)))))
 
-(defn get-all-keys []
-  (when-let [db @db-atom]
-    (let [it (.newIterator db)]
-      (try
-        (.seekToFirst it)
-        (loop [keys []]
-          (if (.isValid it)
-            (let [key (String. (.key it))]
-              (.next it)
-              (recur (conj keys key)))
-            keys))
-        (finally
-          (.close it))))))
+(defn starts-with-bytes? [^bytes value ^bytes prefix]
+  (and (<= (alength prefix) (alength value))
+       (loop [i 0]
+         (cond
+           (= i (alength prefix)) true
+           (not= (aget value i) (aget prefix i)) false
+           :else (recur (inc i))))))
+
+(defn get-all-keys
+  ([]
+   (get-all-keys nil))
+
+  ([prefix]
+   (when-let [db @db-atom]
+     (let [it (.newIterator db)
+           prefix-bytes (when prefix
+                          (.getBytes ^String prefix StandardCharsets/UTF_8))]
+       (try
+         (if prefix-bytes
+           (.seek it prefix-bytes)
+           (.seekToFirst it))
+
+         (loop [keys []]
+           (if (.isValid it)
+             (let [key-bytes (.key it)]
+               (if (or (nil? prefix-bytes)
+                       (starts-with-bytes? key-bytes prefix-bytes))
+                 (let [key (String. key-bytes StandardCharsets/UTF_8)]
+                   (.next it)
+                   (recur (conj keys key)))
+
+                 keys))
+             keys))
+
+         (finally
+           (.close it)))))))
 
 (defn init []
   (open-db))
