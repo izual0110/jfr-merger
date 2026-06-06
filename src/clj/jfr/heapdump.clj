@@ -3,7 +3,8 @@
    [clojure.java.io :as io]
    [clojure.data.json :as json]
    [jfr.environ :as env]
-   [jfr.storage :as storage])
+   [jfr.storage :as storage]
+   [clojure.tools.logging :as log])
   (:import
    (java.util UUID)
    (java.io File PrintWriter StringWriter)
@@ -119,6 +120,7 @@
   (str (UUID/randomUUID) (if (.endsWith filename ".gz") ".hprof.gz" ".hprof")))
 
 (defn handle-heapdump-upload [{:keys [params]}]
+  (log/info (str "heapdump upload params: " params))
   (let [file-param (get params "file")
         tempfile (:tempfile file-param)
         filename (:filename file-param)]
