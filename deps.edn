@@ -1,7 +1,7 @@
 {:paths ["src/clj" "resources"]
 
  :deps {org.clojure/clojure {:mvn/version "1.12.5"}
-        aleph/aleph {:mvn/version "0.9.8"}
+        aleph/aleph {:mvn/version "0.9.9"}
         compojure/compojure {:mvn/version "1.7.2"}
         tools.profiler/jfr-converter {:mvn/version "4.4"}
         org.rocksdb/rocksdbjni$linux64 {:mvn/version "10.10.1.1"}
