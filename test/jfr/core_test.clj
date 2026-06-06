@@ -45,3 +45,20 @@
           (core/stop-server)
           (is (nil? @core/server))
           (reset! core/server original-server))))))
+
+
+(deftest history-endpoints
+  (with-redefs [jfr.service/load-history (fn [] [{:uuid "abc" :name "demo"}])]
+    (let [get-response (core/app {:request-method :get
+                                  :uri "/api/history"})
+          clear-response (core/app {:request-method :post
+                                    :uri "/api/clear"})]
+      (is (= 200 (:status get-response)))
+      (is (= 201 (:status clear-response))))))
+
+(deftest heapdump-history-endpoint
+  (with-redefs [jfr.heapdump/load-heapdump-history (fn [] [{:name "heap.hprof" :created-at 1700000000000 :stats "ok"}])]
+    (let [response (core/app {:request-method :get
+                              :uri "/api/history-heapdump-stats"})]
+      (is (= 200 (:status response)))
+      (is (.contains (str (:body response)) "heap.hprof")))))

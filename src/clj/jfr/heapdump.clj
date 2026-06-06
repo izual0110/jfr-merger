@@ -1,13 +1,39 @@
 (ns jfr.heapdump
   (:require
    [clojure.java.io :as io]
-   [jfr.environ :as env])
+   [clojure.data.json :as json]
+   [jfr.environ :as env]
+   [jfr.storage :as storage]
+   [clojure.tools.logging :as log])
   (:import
    (java.util UUID)
    (java.io File PrintWriter StringWriter)
    (org.openjdk.jol.datamodel ModelVM)
    (org.openjdk.jol.heap HeapDumpReader)
-   (org.openjdk.jol.layouters HotSpotLayouter)))
+   (org.openjdk.jol.layouters HotSpotLayouter)
+   (java.nio.charset StandardCharsets)))
+
+(def ^:private heapdump-history-prefix "meta-heapdump-history/")
+
+(defn- heapdump-history-key [name created-at]
+  (str heapdump-history-prefix created-at "|" name))
+
+(defn load-heapdump-history []
+  (->> (storage/get-all-keys heapdump-history-prefix)
+       (keep (fn [key]
+               (when-let [bytes (storage/load-bytes key)]
+                 (json/read-str (String. bytes StandardCharsets/UTF_8) :key-fn keyword))))
+       (sort-by :created-at >)
+       vec))
+
+(defn- save-heapdump-history! [name stats]
+  (let [created-at (System/currentTimeMillis)
+        item {:name name
+              :created-at created-at
+              :stats stats}
+        payload (.getBytes (json/write-str item) StandardCharsets/UTF_8)]
+    (storage/save-bytes (heapdump-history-key name created-at) payload)
+    item))
 
 (def ^:private column-order [:instances :size :sum-size])
 
@@ -94,6 +120,7 @@
   (str (UUID/randomUUID) (if (.endsWith filename ".gz") ".hprof.gz" ".hprof")))
 
 (defn handle-heapdump-upload [{:keys [params]}]
+  (log/info (str "heapdump upload params: " params))
   (let [file-param (get params "file")
         tempfile (:tempfile file-param)
         filename (:filename file-param)]
@@ -106,9 +133,10 @@
           (with-open [in (io/input-stream tempfile)
                       out (io/output-stream path)]
             (io/copy in out))
-          (heapdump-stats-text path)
+          (let [stats-text (heapdump-stats-text path)]
+            (save-heapdump-history! filename stats-text)
+            stats-text)
           (finally
             (when path
               (.delete (File. path))))))
       (throw (IllegalArgumentException. "Missing heapdump file")))))
-

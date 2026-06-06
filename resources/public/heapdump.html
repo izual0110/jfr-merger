@@ -1,169 +1,259 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <title>Heap Dump Stats</title>
-  <style>
-    :root {
-      --bg: #0b1220;
-      --fg: #e9eef5;
-      --acc: #3b82f6;
-      --mut: #96a0b5;
-    }
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <title>Heap Dump Stats</title>
+        <style>
+            :root {
+                --bg: #0b1220;
+                --fg: #e9eef5;
+                --acc: #3b82f6;
+                --mut: #96a0b5;
+            }
 
-    * { box-sizing: border-box; }
+            * {
+                box-sizing: border-box;
+            }
 
-    body {
-      margin: 0;
-      font: 16px/1.45 system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--fg);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      padding: 24px;
-    }
+            body {
+                margin: 0;
+                font:
+                    16px/1.45 system-ui,
+                    sans-serif;
+                background: var(--bg);
+                color: var(--fg);
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                padding: 24px;
+            }
 
-    h1 { margin: 0 0 8px; font-size: 20px; }
-    p { margin: 0 0 12px; color: var(--mut); }
+            h1 {
+                margin: 0 0 8px;
+                font-size: 20px;
+            }
+            p {
+                margin: 0 0 12px;
+                color: var(--mut);
+            }
 
-    .panel {
-      background: #0f172a;
-      border: 1px solid #223;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      padding: 20px;
-      width: min(1200px, 100%);
-      display: flex;
-      flex-direction: column;
-      min-height: calc(100vh - 48px);
-    }
+            .panel {
+                background: #0f172a;
+                border: 1px solid #223;
+                border-radius: 16px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                padding: 20px;
+                width: min(1200px, 100%);
+                display: flex;
+                flex-direction: column;
+                min-height: calc(100vh - 48px);
+            }
 
-    .row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-top: 12px;
-    }
+            .row {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+                align-items: center;
+                margin-top: 12px;
+            }
 
-    button {
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 0;
-      background: var(--acc);
-      color: #fff;
-      cursor: pointer;
-    }
+            button {
+                padding: 10px 14px;
+                border-radius: 10px;
+                border: 0;
+                background: var(--acc);
+                color: #fff;
+                cursor: pointer;
+            }
 
-    button.secondary {
-      background: #1f2937;
-      color: var(--fg);
-    }
+            button.secondary {
+                background: #1f2937;
+                color: var(--fg);
+            }
 
-    .status { font-size: 14px; color: var(--mut); }
+            .status {
+                font-size: 14px;
+                color: var(--mut);
+            }
 
-    .output {
-      margin-top: 16px;
-      background: #050910;
-      border: 1px solid #223;
-      border-radius: 12px;
-      padding: 14px;
-      white-space: pre-wrap;
-      font-family: ui-monospace, monospace;
-      font-size: 13px;
-      overflow: auto;
-      width: 100%;
-      flex: 1;
-      min-height: 0;
-    }
+            .output {
+                margin-top: 16px;
+                background: #050910;
+                border: 1px solid #223;
+                border-radius: 12px;
+                padding: 14px;
+                white-space: pre-wrap;
+                font-family: ui-monospace, monospace;
+                font-size: 13px;
+                overflow: auto;
+                width: 100%;
+                flex: 1;
+                min-height: 0;
+            }
 
-    progress { width: 100%; height: 12px; margin-top: 10px; }
+            progress {
+                width: 100%;
+                height: 12px;
+                margin-top: 10px;
+            }
 
-    a { color: #93c5fd; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-  </style>
-</head>
-<body>
-  <section class="panel">
-    <h1>Heap Dump Stats (JOL)</h1>
-    <p>Upload a <code>.hprof</code> heap dump and receive the same stats as <code>jol-cli heapdump-stats</code>.</p>
-    <p><a href="/index.html">← Back to JFR merge</a></p>
+            a {
+                color: #93c5fd;
+                text-decoration: none;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
 
-    <input id="fileInput" type="file" accept=".hprof,.gz" hidden>
-    <div class="row">
-      <button id="pick" class="secondary" type="button">Choose heap dump</button>
-      <button id="send" type="button" disabled>Analyze heap dump</button>
-      <span id="fileName" class="status">No file selected.</span>
-    </div>
-    <progress id="progress" max="100" value="0" hidden></progress>
-    <div id="status" class="status"></div>
-    <pre id="output" class="output" aria-live="polite"></pre>
-  </section>
+            .history {
+                margin-top: 16px;
+                border-top: 1px solid #223;
+                padding-top: 12px;
+                max-height: 260px;
+                overflow: auto;
+            }
 
-<script>
-(() => {
-  'use strict';
-  const pickBtn = document.getElementById('pick');
-  const sendBtn = document.getElementById('send');
-  const fileInput = document.getElementById('fileInput');
-  const fileName = document.getElementById('fileName');
-  const status = document.getElementById('status');
-  const output = document.getElementById('output');
-  const progress = document.getElementById('progress');
+            .history-item {
+                padding: 8px 10px;
+                border: 1px solid #223;
+                border-radius: 8px;
+                margin-bottom: 8px;
+                background: #0b1325;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <section class="panel">
+            <h1>Heap Dump Stats (JOL)</h1>
+            <p>
+                Upload a <code>.hprof</code> heap dump and receive the same
+                stats as <code>jol-cli heapdump-stats</code>.
+            </p>
+            <p><a href="/index.html">← Back to JFR merge</a></p>
 
-  let selectedFile = null;
-  let bytesSent = 0;
+            <input id="fileInput" type="file" accept=".hprof,.gz" hidden />
+            <div class="row">
+                <button id="pick" class="secondary" type="button">
+                    Choose heap dump
+                </button>
+                <button id="send" type="button" disabled>
+                    Analyze heap dump
+                </button>
+                <span id="fileName" class="status">No file selected.</span>
+            </div>
+            <progress id="progress" max="100" value="0" hidden></progress>
+            <div id="status" class="status">->>>>>>>>></div>
+            <div class="history">
+                <h2>history</h2>
+                <div id="history" class="status">Loading…</div>
+            </div>
+            <pre id="output" class="output" aria-live="polite"></pre>
+        </section>
 
-  const setStatus = (text) => { status.textContent = text; };
-  const resetOutput = () => { output.textContent = ''; };
-  const uploadUrl = () => `${location.origin}/api/heapdump`;
+        <script>
+            (() => {
+                "use strict";
+                const pickBtn = document.getElementById("pick");
+                const sendBtn = document.getElementById("send");
+                const fileInput = document.getElementById("fileInput");
+                const fileName = document.getElementById("fileName");
+                const status = document.getElementById("status");
+                const output = document.getElementById("output");
+                const progress = document.getElementById("progress");
+                const history = document.getElementById("history");
 
-  pickBtn.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', (event) => {
-    selectedFile = event.target.files[0] || null;
-    if (selectedFile) {
-      fileName.textContent = `${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MiB)`;
-      sendBtn.disabled = false;
-    } else {
-      fileName.textContent = 'No file selected.';
-      sendBtn.disabled = true;
-    }
-  });
+                let selectedFile = null;
+                let bytesSent = 0;
 
-  const sendHeapdump = async () => {
-    if (!selectedFile) return;
-    resetOutput();
-    progress.hidden = false;
-    progress.value = 0;
-    bytesSent = 0;
-    setStatus('Uploading…');
+                const setStatus = (text) => {
+                    status.textContent = text;
+                };
+                const resetOutput = () => {
+                    output.textContent = "";
+                };
+                const uploadUrl = () => `${location.origin}/api/heapdump`;
+                const historyUrl = () =>
+                    `${location.origin}/api/history-heapdump-stats`;
 
-    const formData = new FormData();
-    formData.append('file', selectedFile, selectedFile.name);
+                const formatDate = (millis) =>
+                    new Date(millis).toLocaleString();
 
-    try {
-      const response = await fetch(uploadUrl(), {
-        method: 'POST',
-        body: formData
-      });
-      progress.value = 100;
-      if (!response.ok) {
-        const message = await response.text();
-        setStatus(`Error: ${message}`);
-        return;
-      }
-      setStatus('Done.');
-      output.textContent = await response.text();
-    } catch (error) {
-      setStatus(`Error: ${error.message || 'Upload failed'}`);
-    }
-  };
+                const loadHistory = async () => {
+                    try {
+                        const response = await fetch(historyUrl());
+                        if (!response.ok) {
+                            history.textContent = "Failed to load history.";
+                            return;
+                        }
+                        const items = await response.json();
+                        if (!items.length) {
+                            history.textContent = "No heapdump history yet.";
+                            return;
+                        }
+                        history.innerHTML = "";
+                        items.forEach((item) => {
+                            const row = document.createElement("div");
+                            row.className = "history-item";
+                            row.textContent = `${item.name} — ${formatDate(item.createdAt || item["created-at"])}`;
+                            row.addEventListener("click", () => {
+                                output.textContent = item.stats;
+                                setStatus(`Loaded from history: ${item.name}`);
+                            });
+                            history.appendChild(row);
+                        });
+                    } catch (_err) {
+                        history.textContent = "Failed to load history.";
+                    }
+                };
 
-  sendBtn.addEventListener('click', sendHeapdump);
-})();
-</script>
-</body>
+                pickBtn.addEventListener("click", () => fileInput.click());
+                fileInput.addEventListener("change", (event) => {
+                    selectedFile = event.target.files[0] || null;
+                    if (selectedFile) {
+                        fileName.textContent = `${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MiB)`;
+                        sendBtn.disabled = false;
+                    } else {
+                        fileName.textContent = "No file selected.";
+                        sendBtn.disabled = true;
+                    }
+                });
+
+                const sendHeapdump = async () => {
+                    if (!selectedFile) return;
+                    resetOutput();
+                    progress.hidden = false;
+                    progress.value = 0;
+                    bytesSent = 0;
+                    setStatus("Uploading…");
+
+                    const formData = new FormData();
+                    formData.append("file", selectedFile, selectedFile.name);
+
+                    try {
+                        const response = await fetch(uploadUrl(), {
+                            method: "POST",
+                            body: formData,
+                        });
+                        progress.value = 100;
+                        if (!response.ok) {
+                            const message = await response.text();
+                            setStatus(`Error: ${message}`);
+                            return;
+                        }
+                        setStatus("Done");
+                        output.textContent = await response.text();
+                        await loadHistory();
+                    } catch (error) {
+                        setStatus(`Error: ${error.message || "Upload failed"}`);
+                    }
+                };
+
+                sendBtn.addEventListener("click", sendHeapdump);
+                loadHistory();
+            })();
+        </script>
+    </body>
 </html>
