@@ -17,23 +17,28 @@
    [jfr.environ :as env])
   (:gen-class))
 
+(defonce process-start-nanos (System/nanoTime))
+
+(defn elapsed-ms []
+  (quot (- (System/nanoTime) process-start-nanos) 1000000))
+
 (defn index [_]
   {:status  302
    :headers {"Location" "/index.html"}
    :body    (str (h/html [:a {:href "/index.html"} "index"]))})
 
-(defn get-artifact [uuid content-type]
+(defn get-artifact [uuid]
   (let [data (storage/load-bytes uuid)]
     (if data
       {:status 200
-       :headers {"Content-Type" content-type}
+       :headers {"Content-Type" "text/html"}
        :body data}
       {:status 404
        :body "Artifact not found"})))
 
 (defroutes handlers
   (GET "/" [] index)
-  (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
+  (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid))
   (POST "/api/convertor" req
     (try
       (let [[uuid stats add-flame? add-detector?] (service/generate-artifacts req)]
@@ -113,7 +118,8 @@
   [& _]
   (log/info "Hello, World!")
   (log/info (str "http" (if (env/get-server-http2?) "s" "") "://localhost:8080/index.html"))
-  (start-server))
+  (start-server)
+  (println "Application ready in" (elapsed-ms) "ms"))
 
 ;; (-main)
 ;; (stop-server)
