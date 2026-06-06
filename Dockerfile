@@ -15,10 +15,21 @@ FROM clojure AS builder
 COPY ./src /app/src
 COPY ./deps.edn /app/deps.edn
 COPY ./resources /app/resources
-RUN  /app/clojure/bin/clojure -T:build uber
+RUN /app/clojure/bin/clojure -T:build uber
+
+FROM base AS aot-cache
+WORKDIR /app
+COPY --from=builder /app/target/jfr-merger-0.1.1.jar /app/jfr-merger-0.1.1.jar
+
+RUN java --enable-native-access=ALL-UNNAMED \
+    -XX:AOTCacheOutput=/app/jfr-merger-0.1.1.aot \
+    -cp /app/jfr-merger-0.1.1.jar \
+    clojure.main \
+    -e "(require 'jfr.core) (jfr.core/-main) (jfr.core/stop-server)"
 
 FROM base
 EXPOSE 8080
 WORKDIR /app
 COPY --from=builder /app/target/jfr-merger-0.1.1.jar /app/jfr-merger-0.1.1.jar
-CMD ["sh", "-c", "java --enable-native-access=ALL-UNNAMED $JAVA_OPTS -XX:+PrintFlagsFinal -jar jfr-merger-0.1.1.jar"]
+COPY --from=aot-cache /app/jfr-merger-0.1.1.aot /app/jfr-merger-0.1.1.aot
+CMD ["java", "--enable-native-access=ALL-UNNAMED", "-XX:AOTCache=/app/jfr-merger-0.1.1.aot", "-XX:+PrintFlagsFinal", "-jar", "jfr-merger-0.1.1.jar"]
