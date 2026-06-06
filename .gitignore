@@ -27,4 +27,4 @@ jfr-merger.iml
 ### IntelliJ IDEA ###
 .idea/
 .DS_Store
-lib/async-profiler-*
+lib/async-profiler*
