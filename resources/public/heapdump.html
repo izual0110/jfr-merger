@@ -108,20 +108,34 @@
             }
 
             .history {
-                margin-top: 16px;
-                border-top: 1px solid #223;
-                padding-top: 12px;
-                max-height: 260px;
+                margin-top: 14px;
+                border-top: 1px solid rgba(150, 160, 181, 0.16);
+                padding-top: 10px;
+                max-height: 180px;
                 overflow: auto;
             }
 
+            .history h2 {
+                margin: 0 0 6px;
+                color: var(--mut);
+                font-size: 12px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
             .history-item {
-                padding: 8px 10px;
-                border: 1px solid #223;
-                border-radius: 8px;
-                margin-bottom: 8px;
-                background: #0b1325;
+                padding: 3px 0;
+                border: 0;
+                border-radius: 0;
+                margin: 0;
+                background: transparent;
+                line-height: 1.35;
                 cursor: pointer;
+            }
+
+            .history-item:hover {
+                color: var(--fg);
             }
         </style>
     </head>
