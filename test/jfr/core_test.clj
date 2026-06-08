@@ -34,7 +34,7 @@
                            (catch Exception _ nil))]
             (cond
               (and response (= 200 (:status response))) (let [body (:body response)
-                                                              text (if (string? body) body (slurp body))] 
+                                                              text (if (string? body) body (slurp body))]
                                                           (is (seq text)))
               (zero? attempts) (is false (str "Unexpected status: " (when response (:status response))))
 
@@ -47,7 +47,6 @@
           (core/stop-server)
           (is (nil? @core/server))
           (reset! core/server original-server))))))
-
 
 (deftest history-endpoints
   (with-redefs [jfr.service/load-history (fn [] [{:uuid "abc" :name "demo"}])]
@@ -65,7 +64,6 @@
       (is (= 200 (:status response)))
       (is (.contains (str (:body response)) "heap.hprof")))))
 
-
 (defn- json-request [body]
   {:request-method :post
    :uri "/api/filesystem/process"
@@ -75,7 +73,7 @@
 (deftest filesystem-jfr-endpoint
   (with-redefs [jfr.service/generate-artifacts-from-path (fn [path options]
                                                            (is (= "/tmp/profile.jfr" path))
-                                                           (is (= {:add-flame? false :add-detector? false} options))
+                                                           (is (= {:add-flame? true :add-detector? false} options))
                                                            "uuid-1")]
     (let [response (core/app (json-request {:path "/tmp/profile.jfr"}))
           body (json/read-str (str (:body response)) :key-fn keyword)]
