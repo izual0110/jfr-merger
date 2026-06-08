@@ -51,7 +51,6 @@
        :headers {"Content-Type" "application/json"}
        :body (json/write-str {:error "History item not found"})})))
 
-
 (defn- json-response
   ([status body]
    {:status status
@@ -74,12 +73,12 @@
 
 (defn- filesystem-process-response [req]
   (try
-    (let [{:keys [path type addFlamegraph addDetector]} (parse-json-body req)
+    (let [{:keys [path type addDetector]} (parse-json-body req)
           normalized-type (or (some-> type string/lower-case)
                               (infer-filesystem-type path))]
       (case normalized-type
         "jfr"
-        (let [uuid (service/generate-artifacts-from-path path {:add-flame? (true? addFlamegraph)
+        (let [uuid (service/generate-artifacts-from-path path {:add-flame? true
                                                                :add-detector? (true? addDetector)})]
           (json-response 201 {:type "jfr"
                               :uuid uuid
