@@ -13,7 +13,6 @@
    [hiccup2.core :as h]
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
-   [clojure.string :as string]
    [jfr.environ :as env])
   (:gen-class))
 
@@ -34,25 +33,34 @@
 (defroutes handlers
   (GET "/" [] index)
   (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid "text/html"))
-  (POST "/api/convertor" req (let [[uuid stats add-flame? add-detector?] (service/generate-artifacts req)]
-                               {:status 200
-                                :headers {"Content-Type" "application/json"}
-                                :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})}))
-  (POST "/api/heapdump" req (let [response (heapdump/handle-heapdump-upload req)]
-                             (try
-                               {:status 200
-                                :headers {"Content-Type" "text/plain; charset=utf-8"}
-                                :body response}
-                               (catch IllegalArgumentException e
-                                 (log/error e "Failed to compute heap dump stats")
-                                 {:status 400
-                                  :headers {"Content-Type" "application/json"}
-                                  :body "{\"error\":\"Missing heapdump file\"}"})
-                               (catch Exception e
-                                 (log/error e "Failed to compute heap dump stats")
-                                 {:status 500
-                                  :headers {"Content-Type" "application/json"}
-                                  :body (str "{\"error\":\"" (string/replace (or (.getMessage e) "Unknown error") #"\"" "\\\"") "\"}")}))))
+  (POST "/api/convertor" req
+    (try
+      (let [[uuid stats add-flame? add-detector?] (service/generate-artifacts req)]
+        {:status 200
+         :headers {"Content-Type" "application/json"}
+         :body (json/write-str {:uuid uuid :stats stats :flame add-flame? :detector add-detector?})})
+      (catch clojure.lang.ExceptionInfo e
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/write-str {:error (.getMessage e)
+                                :details (ex-data e)})})))
+  (POST "/api/heapdump" req
+    (try
+      (let [response (heapdump/handle-heapdump-upload req)]
+        {:status 200
+         :headers {"Content-Type" "text/plain; charset=utf-8"}
+         :body response})
+      (catch IllegalArgumentException e
+        (log/error e "Failed to compute heap dump stats")
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body (json/write-str {:error (.getMessage e)})})
+      (catch Exception e
+        (log/error e "Failed to compute heap dump stats")
+        {:status 500
+         :headers {"Content-Type" "application/json"}
+         :body (json/write-str {:error (or (.getMessage e) "Unknown error")})})))
+
 
   (GET "/api/detector/:uuid" [uuid]
     (if-let [result (service/detector-result uuid)]

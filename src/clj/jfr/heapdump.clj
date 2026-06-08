@@ -1,6 +1,7 @@
 (ns jfr.heapdump
   (:require
    [clojure.java.io :as io]
+   [clojure.string :as string]
    [jfr.environ :as env])
   (:import
    (java.util UUID)
@@ -93,11 +94,22 @@
 (defn- safe-filename [filename]
   (str (UUID/randomUUID) (if (.endsWith filename ".gz") ".hprof.gz" ".hprof")))
 
+(defn- readable-file? [path]
+  (let [file (io/file path)]
+    (and (.isFile file) (.canRead file))))
+
 (defn handle-heapdump-upload [{:keys [params]}]
-  (let [file-param (get params "file")
+  (let [path-param (some-> (get params "path") str string/trim)
+        file-param (get params "file")
         tempfile (:tempfile file-param)
         filename (:filename file-param)]
-    (if (and tempfile filename)
+    (cond
+      (not (string/blank? path-param))
+      (if (readable-file? path-param)
+        (heapdump-stats-text path-param)
+        (throw (IllegalArgumentException. "Heapdump path must point to a readable file")))
+
+      (and tempfile filename)
       (let [temp-dir (env/temp-dir)
             safe-name (safe-filename filename)
             path (str temp-dir "/" safe-name)]
@@ -110,5 +122,7 @@
           (finally
             (when path
               (.delete (File. path))))))
+
+      :else
       (throw (IllegalArgumentException. "Missing heapdump file")))))
 
