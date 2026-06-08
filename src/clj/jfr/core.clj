@@ -51,10 +51,59 @@
        :headers {"Content-Type" "application/json"}
        :body (json/write-str {:error "History item not found"})})))
 
+(defn- json-response
+  ([status body]
+   {:status status
+    :headers {"Content-Type" "application/json"}
+    :body (json/write-str body)}))
+
+(defn- bad-request-response [message]
+  (json-response 400 {:error message}))
+
+(defn- server-error-response [message]
+  (json-response 500 {:error message}))
+
+(defn- infer-filesystem-type [path]
+  (let [lower-path (string/lower-case (or path ""))]
+    (cond
+      (string/ends-with? lower-path ".jfr") "jfr"
+      (or (string/ends-with? lower-path ".hprof")
+          (string/ends-with? lower-path ".hprof.gz")
+          (string/ends-with? lower-path ".gz")) "heapdump")))
+
+(defn- filesystem-process-response [req]
+  (try
+    (let [{:keys [path type addDetector]} (parse-json-body req)
+          normalized-type (or (some-> type string/lower-case)
+                              (infer-filesystem-type path))]
+      (case normalized-type
+        "jfr"
+        (let [uuid (service/generate-artifacts-from-path path {:add-flame? true
+                                                               :add-detector? (true? addDetector)})]
+          (json-response 201 {:type "jfr"
+                              :uuid uuid
+                              :links {:heatmap (str "/api/convertor/" uuid)
+                                      :cpu (str "/api/convertor/" uuid "-cpu")
+                                      :alloc (str "/api/convertor/" uuid "-alloc")}}))
+
+        "heapdump"
+        (let [stats (heapdump/handle-heapdump-path path)]
+          (json-response 200 {:type "heapdump"
+                              :stats stats}))
+
+        (bad-request-response "Unsupported file type. Use a .jfr, .hprof, or .hprof.gz path, or pass type jfr/heapdump.")))
+    (catch IllegalArgumentException e
+      (log/error e "Failed to process filesystem path")
+      (bad-request-response (.getMessage e)))
+    (catch Exception e
+      (log/error e "Failed to process filesystem path")
+      (server-error-response (or (.getMessage e) "Unknown error")))))
+
 (defroutes handlers
   (GET "/" [] index)
   (GET "/api/convertor/:uuid" [uuid] (get-artifact uuid))
   (POST "/api/convertor" req (let [body (service/generate-artifacts req)] {:status 201 :body body}))
+  (POST "/api/filesystem/process" req (filesystem-process-response req))
   (POST "/api/heapdump" req (let [response (heapdump/handle-heapdump-upload req)]
                               (try
                                 {:status 200

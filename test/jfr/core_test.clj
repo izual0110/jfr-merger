@@ -1,7 +1,9 @@
 (ns jfr.core-test
-  (:import [java.io File]
+  (:import [java.io ByteArrayInputStream File]
+           [java.nio.charset StandardCharsets]
            [java.util UUID])
   (:require [aleph.http :as http]
+            [clojure.data.json :as json]
             [clojure.test :refer :all]
             [jfr.environ :as env]
             [jfr.core :as core]))
@@ -32,7 +34,7 @@
                            (catch Exception _ nil))]
             (cond
               (and response (= 200 (:status response))) (let [body (:body response)
-                                                              text (if (string? body) body (slurp body))] 
+                                                              text (if (string? body) body (slurp body))]
                                                           (is (seq text)))
               (zero? attempts) (is false (str "Unexpected status: " (when response (:status response))))
 
@@ -45,7 +47,6 @@
           (core/stop-server)
           (is (nil? @core/server))
           (reset! core/server original-server))))))
-
 
 (deftest history-endpoints
   (with-redefs [jfr.service/load-history (fn [] [{:uuid "abc" :name "demo"}])]
@@ -62,3 +63,39 @@
                               :uri "/api/history-heapdump-stats"})]
       (is (= 200 (:status response)))
       (is (.contains (str (:body response)) "heap.hprof")))))
+
+(defn- json-request [body]
+  {:request-method :post
+   :uri "/api/filesystem/process"
+   :headers {"content-type" "application/json"}
+   :body (ByteArrayInputStream. (.getBytes (json/write-str body) StandardCharsets/UTF_8))})
+
+(deftest filesystem-jfr-endpoint
+  (with-redefs [jfr.service/generate-artifacts-from-path (fn [path options]
+                                                           (is (= "/tmp/profile.jfr" path))
+                                                           (is (= {:add-flame? true :add-detector? false} options))
+                                                           "uuid-1")]
+    (let [response (core/app (json-request {:path "/tmp/profile.jfr"}))
+          body (json/read-str (str (:body response)) :key-fn keyword)]
+      (is (= 201 (:status response)))
+      (is (= "jfr" (:type body)))
+      (is (= "uuid-1" (:uuid body)))
+      (is (= "/api/convertor/uuid-1" (get-in body [:links :heatmap]))))))
+
+(deftest filesystem-heapdump-endpoint
+  (with-redefs [jfr.heapdump/handle-heapdump-path (fn [path]
+                                                    (is (= "/tmp/dump.hprof" path))
+                                                    "heap stats")]
+    (let [response (core/app (json-request {:path "/tmp/dump.hprof"
+                                            :type "heapdump"}))
+          body (json/read-str (str (:body response)) :key-fn keyword)]
+      (is (= 200 (:status response)))
+      (is (= "heapdump" (:type body)))
+      (is (= "heap stats" (:stats body))))))
+
+(deftest filesystem-endpoint-rejects-unknown-type
+  (let [response (core/app (json-request {:path "/tmp/file.bin"
+                                          :type "unknown"}))
+        body (json/read-str (str (:body response)) :key-fn keyword)]
+    (is (= 400 (:status response)))
+    (is (.contains (:error body) "Unsupported file type"))))
