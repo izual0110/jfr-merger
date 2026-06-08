@@ -4,872 +4,123 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <title>JFR Viewier</title>
-  <style>
-    :root {
-      --bg: #0b1220;
-      --fg: #e9eef5;
-      --acc: #3b82f6;
-      --mut: #96a0b5;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font: 16px/1.45 system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--fg);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    h1 { margin: 0 0 8px; font-size: 20px; }
-    p { margin: 0 0 12px; color: var(--mut); }
-    small { color: var(--mut); }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 16px;
-      width: min(1500px, 100%);
-    }
-
-    .panel {
-      background: #0f172a;
-      border: 1px solid #223;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      padding: 18px;
-      min-height: 360px;
-    }
-
-    .link-muted {
-      color: #93c5fd;
-      text-decoration: none;
-    }
-
-    .drop {
-      border: 2px dashed #334155;
-      border-radius: 14px;
-      padding: 24px;
-      text-align: center;
-      transition: 0.15s;
-      user-select: none;
-    }
-
-    .drop.highlight {
-      border-color: var(--acc);
-      background: rgba(59, 130, 246, 0.08);
-    }
-
-    .btns {
-      margin-top: 12px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    button,
-    .ghost {
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 0;
-      background: var(--acc);
-      color: #fff;
-      cursor: pointer;
-    }
-
-    .ghost {
-      background: #1f2937;
-      color: var(--fg);
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 12px 0 0;
-      overflow: auto;
-    }
-
-    li {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 2px 0;
-      border-bottom: 1px dashed #223;
-    }
-
-    .row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: center;
-      margin-top: 10px;
-    }
-
-    progress { width: 100%; height: 10px; }
-
-    .option-toggle {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: flex-start;
-      margin-top: 10px;
-      color: #cbd5e1;
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    .flame-label { font-weight: 600; }
-
-    .history {
-      border: 2px dashed #334155;
-      border-radius: 14px;
-      padding: 12px;
-      min-height: 360px;
-    }
-
-    .history-header {
-      justify-content: space-between;
-      margin: 0 0 6px 0;
-    }
-
-    .history ol { margin: 8px 0 0; padding-left: 0; }
-
-    .history li {
-      display: grid;
-      grid-template-columns: 12fr 2fr 1fr 1fr;
-      align-items: start;
-      padding: 10px 0 12px 0;
-      line-height: 0.8;
-    }
-
-    .history li a { word-break: break-word; text-decoration: none; }
-    .history li a:hover { text-decoration: underline; }
-
-    .history-name {
-      cursor: text;
-      min-width: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .history-name[contenteditable="true"] {
-      outline: 1px solid var(--acc);
-      border-radius: 4px;
-      padding: 0 4px;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-      background: rgba(3, 6, 17, 0.85);
-      backdrop-filter: blur(6px);
-      z-index: 9999;
-    }
-
-    .modal.is-visible { display: flex; }
-
-    .modal__dialog {
-      background: #0f172a;
-      border: 1px solid rgba(59, 130, 246, 0.25);
-      border-radius: 18px;
-      box-shadow: 0 20px 60px rgba(2, 6, 23, 0.8);
-      max-width: 1200px;
-      width: 100%;
-      max-height: 85vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .modal__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 24px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: linear-gradient(
-        135deg,
-        rgba(59, 130, 246, 0.2),
-        rgba(14, 165, 233, 0.05)
-      );
-    }
-
-    .modal__title {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-    }
-
-    .modal__close {
-      border: none;
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--fg);
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      font-size: 18px;
-      cursor: pointer;
-      transition: background 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal__close:hover { background: rgba(255, 255, 255, 0.2); }
-
-    .modal__body {
-      padding: 24px;
-      overflow: auto;
-      font-size: 14px;
-      color: var(--fg);
-      line-height: 1.6;
-      background: #0b1220;
-      white-space: pre-wrap;
-    }
-
-    .profiler-report {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      color: #f8fbff;
-    }
-
-    .report-header {
-      background: #10172a;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 14px;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .report-title-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .report-title { font-size: 22px; font-weight: 600; }
-    .report-uuid { font-size: 14px; color: var(--mut); letter-spacing: 0.02em; }
-
-    .report-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      font-size: 14px;
-      color: var(--mut);
-    }
-
-    .report-body {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .report-issues {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .issue {
-      background: #0f172a;
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 12px 32px rgba(2, 6, 23, 0.5);
-    }
-
-    .issue-header {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      padding-bottom: 12px;
-      margin-bottom: 12px;
-    }
-
-    .issue-title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .issue-title { font-size: 18px; font-weight: 600; color: #f1f5f9; }
-    .issue-id { font-size: 14px; color: var(--mut); }
-
-    .issue-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      font-size: 13px;
-      color: var(--mut);
-    }
-
-    .issue-advice-label { font-weight: 600; margin-right: 6px; }
-
-    .issue-stacks {
-      margin-top: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      border-radius: 12px;
-      padding: 12px;
-      background: #050910;
-    }
-
-    .issue-stacks summary {
-      cursor: pointer;
-      font-weight: 600;
-      color: var(--fg);
-      outline: none;
-    }
-
-    .issue-stack-list {
-      list-style: none;
-      padding: 0;
-      margin: 10px 0 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .issue-stack-item {
-      background: #0b1120;
-      border-radius: 10px;
-      padding: 10px 12px;
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 12px;
-      align-items: flex-start;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .issue-stack-hits {
-      font-size: 11px;
-      color: #60a5fa;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      background: rgba(59, 130, 246, 0.12);
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-weight: 600;
-      line-height: 1;
-      white-space: nowrap;
-    }
-
-    .issue-stack-frames {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-      background: rgba(5, 9, 16, 0.8);
-    }
-
-    .issue-stack-frame {
-      font-size: 12px;
-      color: #cbd5f5;
-      border-radius: 8px;
-      padding: 1px 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .issue-stack-frame-code {
-      font-size: 12px;
-      background: none;
-      padding: 0;
-      border-radius: 0;
-      display: block;
-      max-width: 100%;
-      word-break: initial;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: #f8fafc;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    #addFlamegraph + .flame-label::before { content: "🚫"; margin-right: 6px; }
-    #addFlamegraph:checked + .flame-label::before { content: "🔥"; }
-    #addDetector + .flame-label::before { content: "🚫"; margin-right: 6px; }
-    #addDetector:checked + .flame-label::before { content: "🔍"; }
-  </style>
+  <title>JFR tools</title>
 </head>
 <body>
-  <div class="grid">
-    <section class="panel" aria-label="File upload">
-      <h1>File Upload</h1>
-      <p>Drag and drop files or select manually. Upload via <code>fetch</code>.</p>
-      <p><a href="/heapdump.html" class="link-muted">Heap dump stats (JOL)</a></p>
+  <h1>JFR tools</h1>
 
-      <input id="fileInput" type="file" name="files" multiple hidden>
+  <section>
+    <h2>JFR</h2>
+    <label for="jfrPath">Path</label>
+    <input id="jfrPath" type="text" placeholder="/path/to/file.jfr">
+    <button id="processJfr" type="button">Обработать JFR</button>
+    <div id="jfrStatus" aria-live="polite"></div>
+    <div id="jfrLinks"></div>
+  </section>
 
-      <div id="drop" class="drop" tabindex="0" role="button" aria-label="Drop area for files">
-        Drag files here or click
-        <div class="btns">
-          <button type="button" id="pick" class="ghost">Choose files</button>
-          <button type="button" id="send">Send files</button>
-        </div>
-      </div>
-      <label for="addFlamegraph" class="option-toggle">
-        <input id="addFlamegraph" type="checkbox" class="sr-only">
-        <span class="flame-label">Add flamegraphs</span>
-      </label>
-      <label for="addDetector" class="option-toggle">
-        <input id="addDetector" type="checkbox" class="sr-only">
-        <span class="flame-label">Add detector</span>
-      </label>
-
-      <ul id="list" aria-live="polite"></ul>
-      <div class="row"><progress id="prog" max="100" value="0" hidden></progress><span id="status" aria-live="polite"></span></div>
-    </section>
-
-    <section class="panel" aria-label="Link history">
-      <div class="history">
-        <div class="row history-header">
-          <strong>History</strong>
-          <button type="button" id="clear" class="ghost">Clear</button>
-        </div>
-        <ol id="history"></ol>
-      </div>
-    </section>
-  </div>
-
-  <div id="statsModal" class="modal" aria-hidden="true">
-    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
-      <header class="modal__header">
-        <h3 id="statsTitle" class="modal__title"></h3>
-        <button id="closeStats" class="modal__close" aria-label="Close dialog">✖</button>
-      </header>
-      <div id="statsContent" class="modal__body" role="document"></div>
-    </div>
-  </div>
+  <section>
+    <h2>Heapdump</h2>
+    <label for="heapdumpPath">Path</label>
+    <input id="heapdumpPath" type="text" placeholder="/path/to/file.hprof">
+    <button id="processHeapdump" type="button">Обработать heapdump</button>
+    <div id="heapdumpStatus" aria-live="polite"></div>
+    <pre id="heapdumpOutput"></pre>
+  </section>
 
 <script>
 (() => {
   'use strict';
-  // 1) Settings. Set your real endpoint here:
-  const UPLOAD_URL = '/api/convertor';
-  // 2) Keys in localStorage:
-  const LS_KEY = 'htmlLinksHistory';
 
-  // 3) DOM elements:
-  const drop = document.getElementById('drop');
-  const fileInput = document.getElementById('fileInput');
-  const pick = document.getElementById('pick');
-  const sendBtn = document.getElementById('send');
-  const list = document.getElementById('list');
-  const prog = document.getElementById('prog');
-  const status = document.getElementById('status');
-  const historyEl = document.getElementById('history');
-  const clearBtn = document.getElementById('clear');
-  const flameCheckbox = document.getElementById('addFlamegraph');
-  const detectorCheckbox = document.getElementById('addDetector');
-  const STATS_TITLE_MAX = 400;
-  const setStatus = (txt = '') => { status.textContent = txt; };
-  const resetProgress = () => { prog.hidden = true; prog.value = 0; };
-  const stringifyStats = (stats) => {
-    try{ return JSON.stringify(stats, null, 2) || ''; }
-    catch{ return ''; }
-  };
-  const trimmedStatsTitle = (stats) => {
-    const str = stringifyStats(stats);
-    return str.slice(0, STATS_TITLE_MAX) + (str.length > STATS_TITLE_MAX ? '…' : '');
-  };
-  const createLink = (href, label) => {
-    const a = document.createElement('a');
-    a.href = href;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.textContent = label;
-    return a;
-  };
-  const createIcon = (symbol, color, title, handler) => {
-    const span = document.createElement('span');
-    span.textContent = symbol;
-    span.style.color = color;
-    span.style.fontSize = '20px';
-    span.style.verticalAlign = 'middle';
-    span.style.cursor = 'pointer';
-    span.title = title || '';
-    span.addEventListener('click', (e) => {
-      e.stopPropagation();
-      handler?.();
-    });
-    return span;
-  };
-  const createLinks = (base, entries) => entries.map(([suffix, label]) => createLink(base + suffix, label));
-  const createHistoryNameSpan = (item, statsString) => {
-    const nameSpan = document.createElement('span');
-    const displayName = (item.name && item.name.trim()) ? item.name.trim() : item.uuid;
-    nameSpan.textContent = displayName;
-    nameSpan.className = 'history-name';
-    nameSpan.dataset.uuid = item.uuid;
-    nameSpan.spellcheck = false;
-    nameSpan.tabIndex = 0;
-    nameSpan.title = statsString;
-    nameSpan.addEventListener('dblclick', (e) => {
-      e.stopPropagation();
-      beginNameEdit(nameSpan);
-    });
-    nameSpan.addEventListener('keydown', (e) => {
-      if(nameSpan.dataset.editing !== '1') return;
-      if(e.key === 'Enter'){
-        e.preventDefault();
-        finishNameEdit(item.uuid, nameSpan, true, {triggerBlur: true});
-      } else if(e.key === 'Escape'){
-        e.preventDefault();
-        finishNameEdit(item.uuid, nameSpan, false, {triggerBlur: true});
-      }
-    });
-    nameSpan.addEventListener('blur', () => {
-      finishNameEdit(item.uuid, nameSpan, true);
-    });
-    return nameSpan;
+  const jfrPath = document.getElementById('jfrPath');
+  const jfrButton = document.getElementById('processJfr');
+  const jfrStatus = document.getElementById('jfrStatus');
+  const jfrLinks = document.getElementById('jfrLinks');
+  const heapdumpPath = document.getElementById('heapdumpPath');
+  const heapdumpButton = document.getElementById('processHeapdump');
+  const heapdumpStatus = document.getElementById('heapdumpStatus');
+  const heapdumpOutput = document.getElementById('heapdumpOutput');
+
+  const setText = (element, text) => { element.textContent = text; };
+
+  const appendLink = (container, href, label) => {
+    const link = document.createElement('a');
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = label;
+    container.append(link, document.createTextNode(' '));
   };
 
-  // === Link history on the right ===
-  function loadHistory(){
-    try{
-      const raw = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-      if(!Array.isArray(raw)) return [];
-      return raw.map(item => {
-        if(!item || typeof item !== 'object' || !item.uuid) return null;
-        return {
-          ...item,
-          name: typeof item.name === 'string' ? item.name : '',
-          flame: Boolean(item.flame)
-        };
-      }).filter(Boolean);
-    }catch{
-      return [];
+  const readError = async (response) => {
+    const text = await response.text();
+    try {
+      const json = JSON.parse(text);
+      return json.error || text;
+    } catch (_error) {
+      return text;
     }
-  }
-  function saveHistory(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
-  function addToHistory(obj){
-    if(!obj || !obj.uuid) return;
-    const arr = loadHistory();
-    const idx = arr.findIndex(x => x.uuid === obj.uuid);
-    if(idx !== -1){
-      const existing = arr[idx];
-      const updated = {
-        ...existing,
-        ...obj,
-        name: existing.name || ''
-      };
-      arr.splice(idx, 1);
-      arr.unshift(updated);
-    } else {
-      const entry = {
-        ...obj,
-        name: typeof obj.name === 'string' ? obj.name : '',
-        flame: Boolean(obj.flame)
-      };
-      arr.unshift(entry);
-    }
-    saveHistory(arr);
-    renderHistory();
-  }
-  function normalizeConvertorPayload(raw){
-    const payload = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    if(!payload || typeof payload !== 'object') throw new Error('Payload must be an object or JSON string');
-    if(!payload.uuid) throw new Error('Payload must include a uuid field');
-    return {
-      uuid: String(payload.uuid),
-      stats: payload.stats,
-      flame: Boolean(payload.flame),
-      detector: Boolean(payload.detector),
-      name: typeof payload.name === 'string' ? payload.name : ''
-    };
-  }
-  function applyConvertorResponse(rawPayload, {statusMessage = 'Simulated response applied.'} = {}){
-    const normalized = normalizeConvertorPayload(rawPayload);
-    addToHistory(normalized);
-    setStatus(statusMessage);
-    resetProgress();
-    return normalized;
-  }
-  window.applyConvertorResponse = applyConvertorResponse;
-  function clearHistory(){ saveHistory([]); renderHistory(); }
-  function persistHistoryName(uuid, newName){
-    const arr = loadHistory();
-    const idx = arr.findIndex(item => item.uuid === uuid);
-    if(idx === -1) return;
-    arr[idx].name = newName;
-    saveHistory(arr);
-    renderHistory();
-  }
-  function placeCaretAtEnd(el){
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-  function beginNameEdit(span){
-    if(span.dataset.editing === '1') return;
-    span.dataset.editing = '1';
-    span.dataset.originalName = span.textContent;
-    span.setAttribute('contenteditable', 'true');
-    span.focus();
-    placeCaretAtEnd(span);
-  }
-  function finishNameEdit(uuid, span, shouldSave, options = {}){
-    if(span.dataset.editing !== '1') return;
-    const { triggerBlur = false } = options;
-    const original = span.dataset.originalName || '';
-    const rawText = span.textContent.replace(/\s+/g, ' ').trim();
-    span.dataset.editing = '';
-    span.removeAttribute('contenteditable');
-    delete span.dataset.originalName;
-    if(!shouldSave){
-      span.textContent = original;
-      if(triggerBlur) span.blur();
+  };
+
+  jfrButton.addEventListener('click', async () => {
+    const path = jfrPath.value.trim();
+    if (!path) {
+      setText(jfrStatus, 'Укажите path до JFR файла.');
       return;
     }
-    const displayValue = rawText || uuid;
-    const storedValue = displayValue === uuid ? '' : displayValue;
-    span.textContent = displayValue;
-    if(triggerBlur) span.blur();
-    if(displayValue !== original){
-      persistHistoryName(uuid, storedValue);
+
+    setText(jfrStatus, 'Обработка JFR…');
+    jfrLinks.replaceChildren();
+
+    const formData = new FormData();
+    formData.append('filePaths', path);
+    formData.append('addFlamegraph', 'false');
+    formData.append('addDetector', 'false');
+
+    try {
+      const response = await fetch('/api/convertor', {method: 'POST', body: formData});
+      if (!response.ok) {
+        setText(jfrStatus, `Ошибка: ${await readError(response)}`);
+        return;
+      }
+
+      const result = await response.json();
+      setText(jfrStatus, 'Готово.');
+      appendLink(jfrLinks, `/api/convertor/${result.uuid}`, 'heatmap');
+      appendLink(jfrLinks, `/api/convertor/${result.uuid}-cpu`, 'cpu');
+      appendLink(jfrLinks, `/api/convertor/${result.uuid}-alloc`, 'alloc');
+    } catch (error) {
+      setText(jfrStatus, `Ошибка: ${error.message || 'JFR processing failed'}`);
     }
-  }
-  function renderHistory(){
-    const arr = loadHistory();
-    historyEl.innerHTML = '';
-    if(arr.length === 0){
-      const li = document.createElement('li');
-      li.textContent = 'No links yet';
-      historyEl.append(li);
+  });
+
+  heapdumpButton.addEventListener('click', async () => {
+    const path = heapdumpPath.value.trim();
+    if (!path) {
+      setText(heapdumpStatus, 'Укажите path до heapdump файла.');
       return;
     }
-    const frag = document.createDocumentFragment();
-    arr.forEach(item => {
-      const li = document.createElement('li');
 
-      const uuidSpan = document.createElement('span');
-      const statsString = trimmedStatsTitle(item.stats);
-      uuidSpan.title = statsString;
-      uuidSpan.style.fontSize = '15px';
-      uuidSpan.style.fontWeight = 'bold';
-      uuidSpan.style.display = 'inline-flex';
-      uuidSpan.style.alignItems = 'center';
-      uuidSpan.style.gap = '4px';
+    setText(heapdumpStatus, 'Обработка heapdump…');
+    setText(heapdumpOutput, '');
 
-      const infoIcon = createIcon('ⓘ', 'rgb(96, 165, 250)', 'Show statistics', () => {
-        showStatsModal(JSON.stringify(item.stats, null, 2), 'Statistics', statsString);
-      });
-      uuidSpan.append(infoIcon);
+    const formData = new FormData();
+    formData.append('path', path);
 
-      if(item.detector){
-        const recommendationsIcon = createIcon('ⓓ', 'rgb(96, 165, 250)', 'Show recommendations', async () => {
-          try {
-            const response = await fetch("/api/detector/" + item.uuid);
-            if (!response.ok) throw new Error("HTTP " + response.status);
-            showStatsModal(await response.text(), 'Recommendations');
-          } catch (err) {
-            showStatsModal(err.toString(), 'Recommendations');
-            console.error(err);
-          }
-        });
-        recommendationsIcon.style.paddingRight = '5px';
-        uuidSpan.append(recommendationsIcon);
+    try {
+      const response = await fetch('/api/heapdump', {method: 'POST', body: formData});
+      const text = await response.text();
+      if (!response.ok) {
+        setText(heapdumpStatus, `Ошибка: ${text}`);
+        return;
       }
 
-      const nameSpan = createHistoryNameSpan(item, statsString);
-      uuidSpan.append(nameSpan);
-
-      const baseLinks = createLinks('/api/convertor/' + item.uuid, [
-        ['', 'heatmap'],
-        ['-cpu', 'cpu'],
-        ['-alloc', 'alloc']
-      ]);
-      li.append(uuidSpan, ...baseLinks);
-
-      if(item.flame){
-        const sep = document.createElement('span');
-        sep.textContent = '🔥 flame graphs ⟶';
-        sep.style.color = '#475569';
-        const flameLinks = createLinks('/api/convertor/' + item.uuid, [
-          ['-flame', 'flamegraph'],
-          ['-flame-cpu', 'cpu'],
-          ['-flame-alloc', 'alloc']
-        ]);
-        li.append(sep, ...flameLinks);
-      }
-
-      frag.append(li);
-    });
-    historyEl.append(frag);
-  }
-
-  // === File handling on the left ===
-  let batchSeq = 0;            // counter for selected file batches
-  let lastSelectedBatchId = 0; // id of the last selected batch (what we send)
-
-  // Render: add items to the list (DO NOT clear the list)
-  function appendToList(files, batchId){
-    const stamp = new Date().toLocaleTimeString();
-    [...files].forEach(f => {
-      const li = document.createElement('li');
-      li.dataset.batch = String(batchId);
-      li.title = `Batch #${batchId} · ${stamp}`;
-      const name = document.createElement('span');
-      const size = document.createElement('small');
-      name.textContent = f.name;
-      size.textContent = (f.size/1024).toFixed(1) + ' KB';
-      li.append(name, size);
-      list.append(li);
-    });
-  }
-
-  // Set CURRENT files (overwrite input), visually — ADD to the end of the list
-  function setFiles(files){
-    const dt = new DataTransfer();
-    [...files].forEach(f => dt.items.add(f));
-    fileInput.files = dt.files; // only current batch in input
-    lastSelectedBatchId = ++batchSeq;
-    appendToList(files, lastSelectedBatchId);
-  }
-
-  // Delayed removal of a specific batch after 10 seconds
-  function scheduleBatchClear(batchId, delayMs = 10000){
-    setTimeout(() => {
-      [...list.querySelectorAll(`li[data-batch="${batchId}"]`)].forEach(el => el.remove());
-    }, delayMs);
-  }
-
-  // Full reset of input and progress (DO NOT clear the list — it will disappear by timer)
-  function softResetAfterSend(){
-    // clear input
-    const dt = new DataTransfer();
-    fileInput.files = dt.files;
-    // leave progress and status: status will show "Done", hide progress
-    resetProgress();
-  }
-
-  // Send files via fetch (async)
-  async function sendFiles(){
-    if(!fileInput.files.length){ alert('Please select files first.'); return; }
-    const currentBatch = lastSelectedBatchId; // remember what exactly we send
-    const addFlamegraph = flameCheckbox.checked;
-    const addDetector = detectorCheckbox.checked;
-    try{
-      setStatus('Uploading…');
-      prog.hidden = false;
-      let fake = 0; const t = setInterval(()=>{fake=Math.min(99, fake+3); prog.value=fake;}, 120);
-
-      const fd = new FormData();
-      [...fileInput.files].forEach(f => fd.append('files', f, f.name));
-      fd.append('addFlamegraph', addFlamegraph ? 'true' : 'false');
-      fd.append('addDetector', addDetector ? 'true' : 'false');
-
-      const resp = await fetch(UPLOAD_URL, {method:'POST', body: fd});
-      clearInterval(t); prog.value = 100;
-      if(!resp.ok) throw new Error('HTTP '+resp.status);
-
-      const result = await resp.json().catch(()=>null);
-      if(!result || !result.uuid){
-        setStatus('Uploaded, but the server did not return a valid uuid.');
-      } else {
-        applyConvertorResponse(result, {statusMessage: 'Done'});
-      }
-
-      // Do not remove current items immediately — only after 10 seconds
-      scheduleBatchClear(currentBatch, 10000);
-      softResetAfterSend();
-    } catch(err){
-      setStatus('Error: ' + err.message);
-      resetProgress();
+      setText(heapdumpStatus, 'Готово.');
+      setText(heapdumpOutput, text);
+    } catch (error) {
+      setText(heapdumpStatus, `Ошибка: ${error.message || 'Heapdump processing failed'}`);
     }
-  }
-
-  // DnD events
-  ['dragenter','dragover'].forEach(ev =>
-    drop.addEventListener(ev, e => { e.preventDefault(); e.dataTransfer.dropEffect='copy'; drop.classList.add('highlight'); })
-  );
-  ['dragleave','drop'].forEach(ev =>
-    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('highlight'); if(ev==='drop'){ setFiles(e.dataTransfer.files); }})
-  );
-
-  // Clicks and changes
-  pick.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', () => setFiles(fileInput.files));
-  sendBtn.addEventListener('click', sendFiles);
-  clearBtn.addEventListener('click', clearHistory);
-
-  // Initialization
-  renderHistory();
+  });
 })();
-</script>
-<script>
-const statsModal = document.getElementById('statsModal');
-const statsTitle = document.getElementById('statsTitle');
-const statsContent = document.getElementById('statsContent');
-const closeStatsButton = document.getElementById('closeStats');
-
-function closeStatsModal(){
-  statsModal.classList.remove('is-visible');
-  statsModal.setAttribute('aria-hidden', 'true');
-  statsContent.innerHTML = '';
-}
-
-function showStatsModal(body, title){
-  statsModal.classList.add('is-visible');
-  statsModal.setAttribute('aria-hidden', 'false');
-  statsTitle.textContent = title;
-  statsContent.innerHTML = body;
-}
-
-closeStatsButton.addEventListener('click', closeStatsModal);
-
-document.addEventListener('keydown', (event) => {
-  if(event.key === 'Escape' && statsModal.classList.contains('is-visible')){
-    closeStatsModal();
-  }
-});
-
-statsModal.addEventListener('click', (event) => {
-  if(event.target === statsModal){
-    closeStatsModal();
-  }
-});
 </script>
 </body>
 </html>
