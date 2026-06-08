@@ -119,6 +119,32 @@
 (defn- safe-filename [filename]
   (str (UUID/randomUUID) (if (.endsWith filename ".gz") ".hprof.gz" ".hprof")))
 
+(defn- validate-readable-file!
+  "Return a File for path when it exists and can be read."
+  [path]
+  (when-not (seq (str path))
+    (throw (IllegalArgumentException. "File path is required")))
+  (let [file (io/file path)]
+    (cond
+      (not (.exists file))
+      (throw (IllegalArgumentException. (str "File does not exist: " path)))
+
+      (not (.isFile file))
+      (throw (IllegalArgumentException. (str "Path is not a file: " path)))
+
+      (not (.canRead file))
+      (throw (IllegalArgumentException. (str "File is not readable: " path)))
+
+      :else file)))
+
+(defn handle-heapdump-path
+  "Return heap dump stats for a heap dump on the server filesystem."
+  [path]
+  (let [file (validate-readable-file! path)
+        stats-text (heapdump-stats-text (.getAbsolutePath file))]
+    (save-heapdump-history! (.getName file) stats-text)
+    stats-text))
+
 (defn handle-heapdump-upload [{:keys [params]}]
   (log/info (str "heapdump upload params: " params))
   (let [file-param (get params "file")

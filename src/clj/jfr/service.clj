@@ -1,7 +1,7 @@
 (ns jfr.service
   (:import (java.util UUID)
            (one.convert JfrToHeatmap JfrToFlame Arguments)
-           (java.io ByteArrayOutputStream)
+           (java.io ByteArrayOutputStream File)
            (one.jfr JfrReader)
            (java.nio.charset StandardCharsets))
   (:require [clojure.java.io :as io]
@@ -139,23 +139,41 @@
                (write-detector-result! uuid result)))))))
     (log/info (str "Scheduled detector job for " uuid " at " scheduled-at))))
 
-(defn generate-artifacts [{:keys [params]}]
+(defn- validate-readable-file!
+  "Return a File for path when it exists and can be read."
+  [path]
+  (when (string/blank? path)
+    (throw (IllegalArgumentException. "File path is required")))
+  (let [file (io/file path)]
+    (cond
+      (not (.exists file))
+      (throw (IllegalArgumentException. (str "File does not exist: " path)))
+
+      (not (.isFile file))
+      (throw (IllegalArgumentException. (str "Path is not a file: " path)))
+
+      (not (.canRead file))
+      (throw (IllegalArgumentException. (str "File is not readable: " path)))
+
+      :else file)))
+
+(defn- write-merged-jfr!
+  [merged-path input-files]
+  (io/make-parents merged-path)
+  (with-open [out (io/output-stream merged-path)]
+    (doseq [file input-files]
+      (with-open [in (io/input-stream file)]
+        (io/copy in out)))))
+
+(defn- generate-artifacts-from-files
+  [input-files {:keys [add-flame? add-detector? name]}]
   (let [uuid (str (UUID/randomUUID))
         temp-dir (get-temp-dir)
-        merged-path (str temp-dir "/" uuid ".jfr")
-        files (->> (get params "files")
-                   utils/normalize-vector
-                   (filterv #(and (map? %) (contains? % :tempfile))))
-        add-flame? (= "true" (get params "addFlamegraph"))
-        add-detector? (= "true" (get params "addDetector"))]
-    (io/make-parents merged-path)
+        merged-path (str temp-dir "/" uuid ".jfr")]
     (log/info (str "UUID: " uuid " "
                    (if add-flame? "with flamegraph" "without flamegraph")
-                   "\n\t\tFiles to merge: " files))
-    (with-open [out (io/output-stream merged-path)]
-      (doseq [file files]
-        (with-open [in (io/input-stream (:tempfile file))]
-          (io/copy in out))))
+                   "\n\t\tFiles to merge: " input-files))
+    (write-merged-jfr! merged-path input-files)
     (doseq [{:keys [suffix flag]} [{:suffix "" :flag nil}
                                    {:suffix "-cpu" :flag "--cpu"}
                                    {:suffix "-alloc" :flag "--alloc"}]]
@@ -169,5 +187,24 @@
       (save-history-item! {:uuid uuid
                            :stats stats
                            :flame add-flame?
-                           :detector add-detector?})
+                           :detector add-detector?
+                           :name name})
       uuid)))
+
+(defn generate-artifacts [{:keys [params]}]
+  (let [files (->> (get params "files")
+                   utils/normalize-vector
+                   (filterv #(and (map? %) (contains? % :tempfile)))
+                   (mapv :tempfile))
+        add-flame? (= "true" (get params "addFlamegraph"))
+        add-detector? (= "true" (get params "addDetector"))]
+    (generate-artifacts-from-files files {:add-flame? add-flame?
+                                          :add-detector? add-detector?})))
+
+(defn generate-artifacts-from-path
+  "Generate heatmaps/flamegraphs from a JFR file on the server filesystem."
+  [path {:keys [add-flame? add-detector?]}]
+  (let [file (validate-readable-file! path)]
+    (generate-artifacts-from-files [file] {:add-flame? add-flame?
+                                           :add-detector? add-detector?
+                                           :name (.getName ^File file)})))
