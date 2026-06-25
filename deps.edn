@@ -20,7 +20,7 @@
             :exec-args {:compile true}}
   :repl {:jvm-opts    ["-Xmx8g" "-Xms8g" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints" "-Djdk.attach.allowAttachSelf" "-XX:+EnableDynamicAgentLoading" "--enable-native-access=ALL-UNNAMED"]
          :extra-paths ["src/repl" "test"]
-         :extra-deps {cider/cider-nrepl {:mvn/version "0.59.0"}
+         :extra-deps {cider/cider-nrepl {:mvn/version "0.60.0"}
                       nrepl/nrepl       {:mvn/version "1.7.0"}
                       com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.7.0"}
                       org.clojure/tools.namespace {:mvn/version "1.5.1"}}
