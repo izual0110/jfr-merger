@@ -1,7 +1,7 @@
 {:paths ["src/clj" "resources"]
 
  :deps {org.clojure/clojure {:mvn/version "1.12.5"}
-        aleph/aleph {:mvn/version "0.9.9"}
+        aleph/aleph {:mvn/version "0.9.10"}
         compojure/compojure {:mvn/version "1.7.2"}
         tools.profiler/jfr-converter {:mvn/version "4.5"}
         org.rocksdb/rocksdbjni$linux64 {:mvn/version "10.10.1.1"}
@@ -11,8 +11,8 @@
         org.clojure/data.json {:mvn/version "2.5.2"}
         org.clojure/tools.logging {:mvn/version "1.3.1"}
         org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.26.1"}
-        org.bouncycastle/bcprov-jdk18on {:mvn/version "1.84"}
-        org.bouncycastle/bcpkix-jdk18on {:mvn/version "1.84"}}
+        org.bouncycastle/bcprov-jdk18on {:mvn/version "1.85"}
+        org.bouncycastle/bcpkix-jdk18on {:mvn/version "1.85"}}
 
  :aliases
  {:uberjar {:jvm-opts ["-Dclojure.compiler.direct-linking=true" "--enable-native-access=ALL-UNNAMED"]
@@ -20,9 +20,9 @@
             :exec-args {:compile true}}
   :repl {:jvm-opts    ["-Xmx8g" "-Xms8g" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints" "-Djdk.attach.allowAttachSelf" "-XX:+EnableDynamicAgentLoading" "--enable-native-access=ALL-UNNAMED"]
          :extra-paths ["src/repl" "test"]
-         :extra-deps {cider/cider-nrepl {:mvn/version "0.61.0"}
+         :extra-deps {cider/cider-nrepl {:mvn/version "0.62.2"}
                       nrepl/nrepl       {:mvn/version "1.7.0"}
-                      com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.7.0"}
+                      com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.8.0"}
                       org.clojure/tools.namespace {:mvn/version "1.5.1"}}
          :main-opts  ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]" "-p" "5000" "-b" "0.0.0.0"]}
   :build {:extra-deps {io.github.clojure/tools.build {:mvn/version "0.10.14"}}
