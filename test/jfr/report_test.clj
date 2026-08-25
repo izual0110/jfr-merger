@@ -11,6 +11,14 @@
    :started-at 2
    :finished-at 3
    :hit-count 3832
+   :problem-ranges [{:type :periodic
+                     :confidence 0.95
+                     :reason "The same stack appears in repeated bursts with a stable interval between bursts."
+                     :ranges [{:start "2026-06-08T00:00:00Z"
+                               :end "2026-06-08T00:00:01Z"}]
+                     :stack ["demo.Work.run()"]
+                     :score 42
+                     :event-types ["jdk.ExecutionSample"]}]
    :summary [{:id 4
               :title "new SimpleDateFormat repeatedly"
               :advice "Switch to immutable java.time.DateTimeFormatter (thread-safe)."
@@ -34,4 +42,8 @@
     (testing "each frame is rendered as a code line"
       (is (str/includes? rendered-html "<code class=\"issue-stack-frame-code\">java.util.Arrays.copyOf")))
     (testing "hit counts are displayed next to the stack"
-      (is (str/includes? rendered-html "283 hits")))))
+      (is (str/includes? rendered-html "283 hits")))
+    (testing "temporal problem ranges are visible"
+      (is (str/includes? rendered-html "Potential problem ranges"))
+      (is (str/includes? rendered-html "Periodic"))
+      (is (str/includes? rendered-html "2026-06-08T00:00:00Z")))))
