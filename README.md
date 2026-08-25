@@ -36,8 +36,8 @@ cd jfr-merger
 
 # Download the async-profiler converter jars used during heatmap generation
 mkdir -p lib/async-profiler
-curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.4/jfr-converter.jar
-curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.4/async-profiler-4.4-linux-x64.tar.gz" | tar -xz --strip-components=1 -C lib/async-profiler
+curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.5/jfr-converter.jar
+curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.5/async-profiler-4.5-linux-x64.tar.gz" | tar -xz --strip-components=1 -C lib/async-profiler
 ```
 
 > Macos
@@ -48,8 +48,8 @@ cd jfr-merger
 
 # Download the async-profiler converter jars used during heatmap generation
 mkdir -p lib/async-profiler
-curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.4/jfr-converter.jar
-curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.4/async-profiler-4.4-macos.zip" | tar -xz --strip-components=1 -C lib/async-profiler
+curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.5/jfr-converter.jar
+curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.5/async-profiler-4.5-macos.zip" | tar -xz --strip-components=1 -C lib/async-profiler
 
 ### 2. Configure storage paths (optional)
 
