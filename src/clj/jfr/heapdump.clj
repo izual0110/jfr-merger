@@ -38,24 +38,15 @@
 (def ^:private column-order [:instances :size :sum-size])
 
 (def ^:private column-labels
-  {:instances "INSTANCES"
-   :size "SIZE"
-   :sum-size "SUM SIZE"
-   :class "CLASS"})
+  {:instances "instances"
+   :size "size"
+   :sum-size "sum_size"
+   :class "class"})
 
 (defn- format-row [^PrintWriter pw row]
   (doseq [key column-order]
-    (.print pw (format " %,15d" (long (get row key)))))
-  (.print pw (format "    %s%n" (str (:class row)))))
-
-(defn- sum-columns [rows]
-  (reduce (fn [acc row]
-            (reduce (fn [inner key]
-                      (update inner key + (get row key)))
-                    acc
-                    column-order))
-          {:instances 0 :size 0 :sum-size 0}
-          rows))
+    (.print pw (format "%-15d  " (long (get row key)))))
+  (.println pw (str (:class row))))
 
 (defn- print-table
   [^PrintWriter pw rows sort-key]
@@ -63,31 +54,20 @@
                       (sort-by :class rows)
                       (sort-by sort-key #(compare %2 %1) rows))
         print-first (env/get-heapdump-print-first)
-        [head tail] (split-at print-first sorted-rows)
-        tops (sum-columns head)
-        sums (sum-columns sorted-rows)]
-    (.println pw (str "=== Class Histogram. Printing first " print-first " lines."))
-    (.println pw)
-    (.println pw (format "Table is sorted by \"%s\"."
-                         (get column-labels sort-key)))
+        head (take print-first sorted-rows)
+        rows-total (count sorted-rows)
+        rows-shown (min print-first rows-total)]
+    (.println pw "=== Class Histogram")
+    (.println pw (str "Sort: " (name sort-key) (when-not (= sort-key :class) "-desc")))
+    (.println pw (str "Rows-Shown: " rows-shown))
+    (.println pw (str "Rows-Total: " rows-total))
+    (.println pw (str "Truncated: " (> rows-total rows-shown)))
     (.println pw)
     (doseq [key column-order]
-      (.print pw (format " %15s" (get column-labels key))))
-    (.println pw "    CLASS")
-    (.println pw "------------------------------------------------------------------------------------------------")
+      (.print pw (format "%-15s  " (get column-labels key))))
+    (.println pw (get column-labels :class))
     (doseq [row head]
       (format-row pw row))
-    (when (seq tail)
-      (doseq [_ column-order]
-        (.print pw (format " %15s" "...")))
-      (.print pw "    ...\n")
-      (doseq [key column-order]
-        (.print pw (format " %,15d" (long (- (get sums key) (get tops key))))))
-      (.print pw "    <other>\n"))
-    (.println pw "------------------------------------------------------------------------------------------------")
-    (doseq [key column-order]
-      (.print pw (format " %,15d" (long (get sums key)))))
-    (.print pw "    <total>\n")
     (.println pw)))
 
 (defn heapdump-stats-text
@@ -118,6 +98,32 @@
 
 (defn- safe-filename [filename]
   (str (UUID/randomUUID) (if (.endsWith filename ".gz") ".hprof.gz" ".hprof")))
+
+(defn- validate-readable-file!
+  "Return a File for path when it exists and can be read."
+  [path]
+  (when-not (seq (str path))
+    (throw (IllegalArgumentException. "File path is required")))
+  (let [file (io/file path)]
+    (cond
+      (not (.exists file))
+      (throw (IllegalArgumentException. (str "File does not exist: " path)))
+
+      (not (.isFile file))
+      (throw (IllegalArgumentException. (str "Path is not a file: " path)))
+
+      (not (.canRead file))
+      (throw (IllegalArgumentException. (str "File is not readable: " path)))
+
+      :else file)))
+
+(defn handle-heapdump-path
+  "Return heap dump stats for a heap dump on the server filesystem."
+  [path]
+  (let [file (validate-readable-file! path)
+        stats-text (heapdump-stats-text (.getAbsolutePath file))]
+    (save-heapdump-history! (.getName file) stats-text)
+    stats-text))
 
 (defn handle-heapdump-upload [{:keys [params]}]
   (log/info (str "heapdump upload params: " params))

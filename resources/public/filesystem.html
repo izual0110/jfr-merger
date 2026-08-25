@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>Process file by path</title>
+</head>
+<body>
+  <h1>Process JFR or heap dump by filesystem path</h1>
+  <p><a href="/index.html">JFR upload</a> | <a href="/heapdump.html">Heap dump upload</a></p>
+
+  <input id="path" name="path" type="text" size="100" placeholder="/path/to/file.jfr or /path/to/dump.hprof">
+  <button id="process" type="button">Process file</button>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="links"></div>
+  <pre id="output" aria-live="polite"></pre>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const pathInput = document.getElementById('path');
+      const processButton = document.getElementById('process');
+      const status = document.getElementById('status');
+      const links = document.getElementById('links');
+      const output = document.getElementById('output');
+
+      function setStatus(text) {
+        status.textContent = text;
+      }
+
+      function resetResult() {
+        links.innerHTML = '';
+        output.textContent = '';
+      }
+
+      function addLink(href, text) {
+        const a = document.createElement('a');
+        a.href = href;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = text;
+        links.appendChild(a);
+        links.appendChild(document.createTextNode(' '));
+      }
+
+      function renderJfrResult(result) {
+        addLink(result.links.heatmap, 'heatmap');
+        addLink(result.links.cpu, 'cpu');
+        addLink(result.links.alloc, 'alloc');
+        output.textContent = JSON.stringify(result, null, 2);
+      }
+
+      async function processFile() {
+        const path = pathInput.value.trim();
+        if (!path) {
+          setStatus('Enter a file path.');
+          return;
+        }
+
+        resetResult();
+        setStatus('Processing…');
+        processButton.disabled = true;
+
+        try {
+          const response = await fetch('/api/filesystem/process', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({path})
+          });
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || `HTTP ${response.status}`);
+          }
+          setStatus('Done');
+          if (result.type === 'jfr') {
+            renderJfrResult(result);
+          } else {
+            output.textContent = result.stats || '';
+          }
+        } catch (error) {
+          setStatus(`Error: ${error.message || 'Failed to process file'}`);
+        } finally {
+          processButton.disabled = false;
+        }
+      }
+
+      processButton.addEventListener('click', processFile);
+      pathInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          processFile();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
