@@ -36,7 +36,7 @@ jobs:
 
       - name: Check Clojure cache before tests
         run: |
-          if find ~/.m2 -path '*org/clojure/clojure/1.12.5/clojure-1.12.5.pom' -print -quit | grep -q .; then
+          if find ~/.m2 -path '*org/clojure/clojure/1.12.6/clojure-1.12.6.pom' -print -quit | grep -q .; then
             echo "org/clojure dependency already cached"
           else
             echo "org/clojure dependency missing from cache"
@@ -67,7 +67,7 @@ jobs:
 
       - name: Check Clojure cache after build
         run: |
-          if find ~/.m2 -path '*org/clojure/clojure/1.12.5/clojure-1.12.5.pom' -print -quit | grep -q .; then
+          if find ~/.m2 -path '*org/clojure/clojure/1.12.6/clojure-1.12.6.pom' -print -quit | grep -q .; then
             echo "org/clojure dependency cached"
           else
             echo "org/clojure dependency still missing"
