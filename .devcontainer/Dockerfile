@@ -18,7 +18,8 @@ RUN dnf install -y \
     && /tmp/linux-install.sh \
     && rm -f /tmp/linux-install.sh \
     && dnf clean all \
-    && rm -rf /var/cache/dnf
+    && rm -rf /var/cache/dnf \
+    && git config --global --add safe.directory /workspace/jfr-merger
 
 WORKDIR /workspace/jfr-merger
 
