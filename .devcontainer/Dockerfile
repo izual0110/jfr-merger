@@ -9,7 +9,7 @@ RUN dnf install -y \
       findutils \
       git \
       gzip \
-      java-26-openjdk-devel \
+      java-27-openjdk-devel \
       rlwrap \
       tar \
     && curl -fsSL -o /tmp/linux-install.sh \

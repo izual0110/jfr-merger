@@ -1,5 +1,5 @@
 FROM quay.io/fedora/fedora-minimal:44 AS base
-RUN dnf install -y java-26-openjdk-headless tar gzip && dnf clean all && rm -rf /var/cache/yum
+RUN dnf install -y java-27-openjdk-headless tar gzip && dnf clean all && rm -rf /var/cache/yum
 
 #only for jfr-merger-ci
 FROM base AS clojure
