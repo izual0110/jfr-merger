@@ -4,8 +4,8 @@
         aleph/aleph {:mvn/version "0.9.11"}
         compojure/compojure {:mvn/version "1.7.2"}
         tools.profiler/jfr-converter {:mvn/version "4.5"}
-        org.rocksdb/rocksdbjni$linux64 {:mvn/version "10.10.1.1"}
-        org.rocksdb/rocksdbjni$osx {:mvn/version "10.10.1.1"}
+        org.rocksdb/rocksdbjni$linux64 {:mvn/version "11.0.4"}
+        org.rocksdb/rocksdbjni$osx {:mvn/version "11.0.4"}
         hiccup/hiccup {:mvn/version "2.0.0"}
         org.openjdk.jol/jol-core {:mvn/version "0.17"}
         org.clojure/data.json {:mvn/version "2.5.2"}
@@ -20,8 +20,8 @@
             :exec-args {:compile true}}
   :repl {:jvm-opts    ["-Xmx8g" "-Xms8g" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints" "-Djdk.attach.allowAttachSelf" "-XX:+EnableDynamicAgentLoading" "--enable-native-access=ALL-UNNAMED"]
          :extra-paths ["src/repl" "test"]
-         :extra-deps {cider/cider-nrepl {:mvn/version "0.62.2"}
-                      nrepl/nrepl       {:mvn/version "1.7.0"}
+         :extra-deps {cider/cider-nrepl {:mvn/version "0.63.0"}
+                      nrepl/nrepl       {:mvn/version "1.8.0"}
                       com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.8.0"}
                       org.clojure/tools.namespace {:mvn/version "1.5.1"}}
          :main-opts  ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]" "-p" "5000" "-b" "0.0.0.0"]}
