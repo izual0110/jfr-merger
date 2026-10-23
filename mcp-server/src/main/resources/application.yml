@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: mcp-server
+  ai:
+    mcp:
+      server:
+        name: jfr-merger-mcp-server
+        version: 0.0.1
+  servlet:
+    multipart:
+      max-file-size: 1GB
+      max-request-size: 1GB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+server:
+  shutdown: graceful
