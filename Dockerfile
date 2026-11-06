@@ -1,4 +1,4 @@
-FROM quay.io/fedora/fedora-minimal:44 AS base
+FROM quay.io/fedora/fedora-minimal:45 AS base
 RUN dnf install -y java-27-openjdk-headless tar gzip && dnf clean all && rm -rf /var/cache/yum
 
 #only for jfr-merger-ci
