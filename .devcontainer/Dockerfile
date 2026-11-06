@@ -1,4 +1,4 @@
-FROM quay.io/fedora/fedora-minimal:44
+FROM quay.io/fedora/fedora-minimal:45
 
 ARG CLOJURE_VERSION=1.12.6.1673
 
