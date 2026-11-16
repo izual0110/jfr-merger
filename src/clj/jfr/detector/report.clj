@@ -19,6 +19,44 @@
   (when (and started finished)
     (str (- finished started) " ms")))
 
+(defn- format-confidence [confidence]
+  (if (number? confidence)
+    (format "%.0f%%" (* 100 confidence))
+    "—"))
+
+(defn- range-item [{:keys [start end start-ms end-ms]}]
+  [:li.problem-range
+   [:time.problem-range-start (or start (str start-ms))]
+   [:span.problem-range-separator " → "]
+   [:time.problem-range-end (or end (str end-ms))]])
+
+(defn- problem-stack [frames]
+  [:ol.problem-stack-frames
+   (for [frame (or frames [])]
+     [:li.problem-stack-frame [:code.problem-stack-frame-code frame]])])
+
+(defn- problem-range-block [{:keys [type confidence reason ranges stack score event-types]}]
+  [:div.problem-range-block
+   [:div.problem-range-header
+    [:div.problem-range-title-row
+     [:span.problem-range-title (str/capitalize (name (keyword type)))]
+     [:span.problem-range-score (str "score: " score)]]
+    [:div.problem-range-meta
+     [:span.problem-range-meta-item (str "confidence: " (format-confidence confidence))]
+     (when (seq event-types)
+       [:span.problem-range-meta-item (str "events: " (str/join ", " event-types))])]]
+   [:p.problem-range-reason reason]
+   (when (seq ranges)
+     [:details.problem-ranges-list
+      [:summary "Time ranges (" (count ranges) ")"]
+      [:ul.problem-range-list
+       (for [range ranges]
+         (range-item range))]])
+   (when (seq stack)
+     [:details.problem-stack
+      [:summary "Stack trace"]
+      (problem-stack stack)])])
+
 (defn- issue-stack-item [[frames hits]]
   [:li.issue-stack-item
    (when hits
@@ -47,7 +85,7 @@
 
 (defn report-div
   "It takes a report map (from JSON) and returns a Hiccup tree with a single root <div>"
-  [{:keys [uuid status scheduled-at started-at finished-at hit-count summary] :as report}]
+  [{:keys [uuid status scheduled-at started-at finished-at hit-count summary problem-ranges] :as report}]
   [:div.profiler-report
    [:div.report-header
     [:div.report-title-row
@@ -63,6 +101,13 @@
         (str "Duration: " (format-duration-ms started-at finished-at))])
      [:span.report-meta-item (str "Findings: " (count summary) " pattern" (when (not= 1 (count summary)) "s"))]]]
    [:div.report-body
-    [:div.report-issues
+    (when (seq problem-ranges)
+      [:section.problem-ranges
+       [:h2.problem-ranges-heading "Potential problem ranges"]
+       [:p.problem-ranges-description "Temporal detector groups stack samples into peak, periodic, and constant patterns. Use these ranges as the first places to inspect in the heatmaps and flamegraphs."]
+       (for [problem problem-ranges]
+         (problem-range-block problem))])
+    [:section.report-issues
+     [:h2.report-issues-heading "Known bad stack patterns"]
      (for [issue summary]
        (issue-block issue))]]])

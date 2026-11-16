@@ -115,6 +115,7 @@
            (let [hits (detector/detect-patterns {:jfr-path merged-path
                                                       :alloc-only? false})
                  summary (detector/summarize hits {:top-stacks 10})
+                 problem-ranges (detector/detect-problem-ranges merged-path {:top-problems 20})
                  finished-at (System/currentTimeMillis)
                  result {:uuid uuid
                          :status "done"
@@ -122,7 +123,8 @@
                          :started-at started-at
                          :finished-at finished-at
                          :hit-count (count hits)
-                         :summary summary}]
+                         :summary summary
+                         :problem-ranges problem-ranges}]
              (write-detector-result! uuid result)
              (log/info (str "Detector job completed for " uuid
                             " at " finished-at
