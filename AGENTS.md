@@ -1,51 +1,31 @@
-# Agent handbook for `jfr-merger`
+# Agent guide for `jfr-merger`
 
-## Project at a glance
-- **Purpose**: Merge one or more Java Flight Recorder captures, generate async-profiler heatmaps (default, CPU-only, allocation-only), and serve them via an HTTP API + static UI.
-- **Primary namespaces** live under `src/clj/jfr/`:
-  - `core.clj` wires HTTP routes (Ring + http-kit) and lifecycle helpers.
-  - `service.clj` handles upload plumbing, merging, invoking async-profiler, and collecting stats.
-  - `storage.clj` encapsulates RocksDB persistence for merged artifacts.
-  - `utils.clj` hosts helpers shared across the service/storage layers.
-- Static assets and config sit in `resources/`; integration assets (e.g., async-profiler jars) go into `lib/` (git-ignored).
+`jfr-merger` merges Java Flight Recorder (JFR) recordings, generates HTML visualizations, and serves them through an HTTP API and browser UI. See [README.md](README.md) for setup, commands, and API usage.
 
-## Local setup checklist
-1. Install **Java 27+** and the **Clojure CLI tools** (e.g., `brew install clojure/tools/deps` on macOS or follow https://clojure.org/guides/install_clojure for Linux/Windows).
-2. Optional but recommended: create `storage/` with subfolders `jfrs/` and `temp/` if you tweak `resources/config.edn`.
-3. **Before running tests**, execute `./prepare-env.sh` to install toolchain prerequisites (rlwrap, Clojure CLI, converters).
+## Where to work
 
-### Helpful commands
-```bash
-# Run the web service (REPL-friendly, port 8080)
-clj -M:repl
+Under `src/clj/jfr/`:
 
-# Execute the test suite
-clj -M:test
+- `core.clj`: Ring routes, multipart middleware, and Aleph server lifecycle.
+- `service.clj`: JFR merging, async-profiler conversion, statistics, and history.
+- `storage.clj`: RocksDB persistence and lifecycle.
+- `heapdump.clj`: heap dump analysis with JOL.
+- `detector/`: background pattern detection and report rendering.
+- `environ.clj` and `utils.clj`: configuration access and shared helpers.
 
-# Build and run the uberjar
-clj -T:build uber
-java -jar target/jfr-merger-0.1.1.jar
+Static assets are in `resources/public/`, configuration is in `resources/config.edn`, and tests are in `test/`.
 
-# Docker workflow
-docker compose up --build
-```
+## Change rules
 
-## Coding guidelines
-- Follow the style you find in existing namespaces: two-space indentation, `:require` lists grouped by project vs. third-party namespaces, and idiomatic `let` bindings (align values for readability only when it does not fight your editor).
-- Keep side effects inside `jfr.service`, `jfr.storage`, or dedicated lifecycle helpers—pure helper functions belong in `jfr.utils`.
-- Public functions that power HTTP handlers should return Ring-compatible maps (`{:status ... :headers ... :body ...}`) and remain data-oriented.
-- Prefer explicit arities over varargs for clarity, and document behavior with docstrings when the side effect is non-obvious (e.g., touching RocksDB or the filesystem).
-- When adding dependencies, declare them in `deps.edn` and consider OS-specific classifiers if native libraries are required (mirroring the RocksDB setup).
+- Inspect the relevant code and tests before editing. Make focused changes and preserve unrelated work.
+- Follow nearby Clojure formatting: two-space indentation, grouped `:require` entries, and idiomatic `let` bindings. Prefer explicit arities and use docstrings for non-obvious side effects.
+- Keep HTTP handlers data-oriented and return Ring response maps. Put filesystem and database operations in the relevant service or storage namespace; keep pure shared helpers in `jfr.utils`.
+- Reuse existing dependencies. Ask before adding one, declare it in `deps.edn`, and check platform support for native libraries.
+- Use temporary directories in tests. Do not commit recordings, heap dumps, generated binaries, or local storage. Update `.gitignore` if a workflow produces new local artifacts.
 
-## Testing & quality gate
-- Always run `clj -M:test` before pushing. Tests rely on temporary directories; avoid hard-coding absolute paths.
-- Execute `./prepare-env.sh` before running tests.
-- If you touch the HTTP layer, hit `http://localhost:8080/index.html` manually or via integration tests to confirm multipart uploads still succeed.
-- Ensure any new binaries or large files are ignored via `.gitignore`—only checked-in source/config files should land in commits.
+## Verification
 
-## Operations notes
-- Default storage paths (`storage/jfrs`, `storage/temp`) are created automatically at runtime, but production deployments should mount persistent volumes there.
-- The HTTP server enforces a 1 GiB upload limit (`:max-body` in `jfr.core/-main`). Document or adjust the limit if your change requires larger recordings.
-- RocksDB handles are managed globally; call `jfr.core/stop-server` in REPL sessions to release resources cleanly.
-
-Happy hacking! Keep this file updated when workflows change so newcomers stay productive.
+- Run the tests that cover the change and run `clj -M:test` before pushing. If the CLI is missing on Linux, review `prepare-env.sh` before running it: it can install system packages. See [README.md](README.md) for prerequisites.
+- For HTTP changes, verify the affected routes. For upload changes, open `http://localhost:8080/index.html` with the default configuration and submit a multipart upload, or cover the equivalent flow in an integration test.
+- In REPL sessions, call `(jfr.core/stop-server)` to stop the server and detector worker and release RocksDB resources.
+- Report the checks you ran and any checks you could not run. Keep this guide and the README current when workflows change.

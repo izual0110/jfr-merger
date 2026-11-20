@@ -1,202 +1,157 @@
 # jfr-merger
 
-`jfr-merger` is a lightweight web application that helps you explore Java Flight Recorder (JFR) profiles. Upload one or more `.jfr` files, merge them, and instantly inspect the resulting CPU and allocation heatmaps inside the browser.
+Upload one or more Java Flight Recorder (`.jfr`) files to inspect them together in your browser. `jfr-merger` merges the recordings and uses async-profiler to generate a default heatmap plus CPU-only and allocation-only heatmaps. It can also generate flame graphs, run background pattern detection, and analyze heap dumps with JOL.
 
-> **Why another profiler tool?**
-> When you're dealing with production systems, you often end up with several short-lived JFR recordings gathered from different nodes. `jfr-merger` stitches those captures together, generates async-profiler heatmaps, and stores the artifacts so that you can iterate quickly.
+## Run locally
 
----
+Use the [Clojure CLI](https://clojure.org/guides/install_clojure) and JDK 27 to match the Docker build. The application dependencies, including the JFR converter and JOL, are declared in [`deps.edn`](deps.edn). You do not need to download the converter manually.
 
-## Features
-
-- **Merge multiple JFR captures** into a single profile before generating visualizations.
-- **Generate three heatmaps per upload** – an aggregated view, CPU-only, and allocation-only heatmaps.
-- **Persist results in RocksDB** so you can share URLs or compare uploads later without reprocessing.
-- **Expose REST endpoints** for automation-friendly workflows (fetch stats, download heatmaps, list stored recordings).
-- **Upload heap dump stats** via a dedicated UI page powered by JOL.
-- **Docker-friendly packaging** and an uberjar build for easy deployment to your preferred environment.
-
----
-
-## Getting started
-
-### Prerequisites
-
-- Java 27 or newer (required by async-profiler tooling).
-- [Clojure CLI tools](https://clojure.org/guides/getting_started) for local development.
-- `curl` and `tar` for fetching async-profiler artifacts.
-
-### 1. Clone and bootstrap dependencies
-
-> Linux
-```bash
-cd /path/to/workspace
+```sh
 git clone https://github.com/izual0110/jfr-merger.git
 cd jfr-merger
-
-# Download the async-profiler converter jars used during heatmap generation
-mkdir -p lib/async-profiler
-curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.6/jfr-converter.jar
-curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.6/async-profiler-4.6-linux-x64.tar.gz" | tar -xz --strip-components=1 -C lib/async-profiler
-```
-
-> Macos
-```bash
-cd /path/to/workspace
-git clone https://github.com/izual0110/jfr-merger.git
-cd jfr-merger
-
-# Download the async-profiler converter jars used during heatmap generation
-mkdir -p lib/async-profiler
-curl -L -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.6/jfr-converter.jar
-curl -fsSL "https://github.com/async-profiler/async-profiler/releases/download/v4.6/async-profiler-4.6-macos.zip" | tar -xz --strip-components=1 -C lib/async-profiler
-
-### 2. Configure storage paths (optional)
-
-By default, the application writes processed heatmaps to `storage/jfrs` and temporary merged files to `storage/temp`. Adjust these paths by editing [`resources/config.edn`](resources/config.edn):
-
-```clojure
-{:jfr-data-path "storage/jfrs"
- :temp-dir     "storage/temp"}
-```
-
-> The configured `:jfr-data-path` must be readable and writable by the running process. During development the directories are created automatically.
-
-### 3. Run the application locally
-
-```bash
-# Start a development REPL (includes the HTTP server on port 8080)
-clj -M:repl
-
-# tests
-clj -M:test
-
-# run service
 clj -X:uberjar
-
-# or build and run the executable uberjar
-clj -T:build uber
-java -jar target/jfr-merger-0.1.1.jar
-
-# update deps
-clj -Moutdated --upgrade --force 
 ```
 
-Once the server is running, open [http://localhost:8080/index.html](http://localhost:8080/index.html) in your browser.
+This command starts the service; it does not build a JAR. Open [http://localhost:8080/index.html](http://localhost:8080/index.html) with the default configuration.
 
-### 4. Docker workflow
+On macOS, you can install the Clojure CLI with `brew install clojure/tools/deps`. On Linux, if `clj` or `rlwrap` is missing, review [`prepare-env.sh`](prepare-env.sh) before running `./prepare-env.sh` from the repository root. It can install system packages. It does not install Java or async-profiler.
 
-The repository ships with a `Dockerfile` and `docker-compose.yml` for containerized deployments:
+### Run with Docker
 
-```bash
-# Build the runtime image (downloads the async-profiler artifacts during build)
-docker build -t jfr-merger .
-
-# Run the container, exposing the HTTP server on port 8080
-docker run --rm -p 8080:8080 jfr-merger
-
-# For interactive debugging
-docker run --rm -it --entrypoint bash jfr-merger
-
-# Drop into a running container (replace `jfr-merger` with the container name)
-docker exec -it jfr-merger /bin/bash
-
-# For remove everything
-docker system prune -a
-```
-
-To orchestrate alongside other services, use Docker Compose:
-
-```bash
+```sh
 docker compose up --build
 ```
 
----
+Compose publishes port `8080` and mounts the `app_storage` volume at `/app/storage` so data survives container replacement. To open a shell in the running Compose service, use `docker compose exec jfr /bin/sh`.
 
-## Using the UI
+To build and run without Compose, use:
 
-1. Navigate to the upload page and drop one or more `.jfr` files.
-2. Click **Merge & Generate**. The server streams each file into a temporary merged recording, then runs async-profiler's `jfr-converter` in three modes (default, `--cpu`, `--alloc`).
-3. When processing finishes you'll see a link to the generated heatmap plus a summary block with:
-   - total event count
-   - recording window (UTC start/end)
-   - duration in milliseconds
-   - frequency of event types encountered
-4. Switch between the stored heatmaps or share the link with your teammates. Artifacts are cached in RocksDB and remain available until you clear the database.
-
-### Generating test data
-
-If you need synthetic load, the repository includes [`test/BadPatternsDemo.java`](test/BadPatternsDemo.java):
-
-> Linux
-```bash
-java -agentpath:$(pwd)/lib/async-profiler/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
+```sh
+docker build -t jfr-merger .
+docker run --rm --name jfr-merger-local -p 8080:8080 -v jfr-merger-storage:/app/storage jfr-merger
 ```
 
-> Macos
-```bash
-java -agentpath:$(pwd)/lib/async-profiler/lib/libasyncProfiler.dylib=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
+For debugging, run these commands as needed:
+
+```sh
+# Open a shell in the image without starting the application.
+docker run --rm -it --entrypoint /bin/sh jfr-merger
+
+# Open a shell in the standalone container while it is running.
+docker exec -it jfr-merger-local /bin/sh
 ```
 
----
+To reclaim disk space across Docker:
 
-## API reference
-
-While the SPA is the primary entry point, the server exposes a small REST interface (useful for scripting or building your own frontend):
-
-| Method | Path                    | Description |
-| ------ | ----------------------- | ----------- |
-| `POST` | `/api/convertor`        | Upload one or more JFR files (`multipart/form-data` field name `files`). Optional `addFlamegraph=true` triggers flamegraph generation alongside heatmaps. Returns `{uuid, stats, flame}`. |
-| `GET`  | `/api/convertor/{uuid}` | Download the generated HTML artifact (heatmaps use suffixes `-cpu`/`-alloc`; flamegraphs use `-flame`, `-flame-cpu`, `-flame-alloc`). |
-| `GET`  | `/api/storage/stats`    | Inspect RocksDB statistics (estimated key count, live data size, etc.). |
-| `GET`  | `/api/storage/keys`     | List all stored keys for housekeeping scripts. |
-| `POST` | `/api/heapdump`         | Upload a `.hprof` heap dump (multipart field `file`) and receive JOL heapdump stats output. |
-
-The stats payload mirrors the structure produced by [`jfr.service/jfr-stats`](src/clj/jfr/service.clj), making it straightforward to surface additional metadata.
-
----
-
-## Project layout
-
-```
-├── resources/            # Static assets & config.edn
-├── src/clj/jfr/          # Ring handlers, storage helpers, async-profiler integration
-├── test/                 # Unit tests covering helpers and storage components
-├── Dockerfile            # Production image with async-profiler binaries baked in
-└── deps.edn              # Clojure CLI configuration and build aliases
+```sh
+docker system prune -a
 ```
 
-- [`jfr.core`](src/clj/jfr/core.clj) wires the HTTP routes and launches the [`http-kit`](https://github.com/http-kit/http-kit) server.
-- [`jfr.service`](src/clj/jfr/service.clj) performs merging, conversion, and statistics extraction using async-profiler's `JfrToHeatmap`.
-- [`jfr.storage`](src/clj/jfr/storage.clj) persists results in RocksDB and exposes simple housekeeping helpers.
+**This is not project-scoped:** it removes stopped containers, unused networks and images, and build cache. It does not remove volumes by default.
 
----
+### Build an executable JAR
 
-## Testing
+```sh
+clj -T:build uber
+java --enable-native-access=ALL-UNNAMED -jar target/jfr-merger-0.1.1.jar
+```
 
-```bash
+### Configure storage
+
+Edit [`resources/config.edn`](resources/config.edn) to change the storage paths or server settings. The default storage settings are:
+
+```clojure
+{:jfr-data-path "storage/jfrs"
+ :temp-dir      "storage/temp"}
+```
+
+RocksDB stores results and history in `:jfr-data-path`. The service uses `:temp-dir` for working files. The service process needs write access to both paths. Use persistent storage if you need results to survive redeployment.
+
+## Use the browser UI
+
+1. Open the upload page and select one or more `.jfr` files.
+2. Select any optional analyses, then click **Merge & Generate**.
+3. Open a heatmap or review the event count, UTC start and end times, duration in milliseconds, and counts by event type.
+
+You can reopen results from the history on the same instance. Use the heap dump page to generate JOL statistics for a heap dump.
+
+### Generate a sample recording
+
+Use the native [async-profiler 4.6 distribution](https://github.com/async-profiler/async-profiler/releases/tag/v4.6) to record CPU and allocation events from [`test/BadPatternsDemo.java`](test/BadPatternsDemo.java). Run the commands from the repository root, then upload `profile.jfr` in the browser.
+
+**Linux (x64)** — on ARM64, replace `linux-x64` with `linux-arm64` in the URL:
+
+```sh
+mkdir -p lib/async-profiler
+curl -fsSL https://github.com/async-profiler/async-profiler/releases/download/v4.6/async-profiler-4.6-linux-x64.tar.gz \
+  | tar -xzf - --strip-components=1 -C lib/async-profiler
+java -agentpath:./lib/async-profiler/lib/libasyncProfiler.so=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
+```
+
+**macOS** — the system `tar` can extract ZIP archives without `-z`:
+
+```sh
+mkdir -p lib/async-profiler
+curl -fsSL https://github.com/async-profiler/async-profiler/releases/download/v4.6/async-profiler-4.6-macos.zip \
+  | tar -xf - --strip-components=1 -C lib/async-profiler
+java -agentpath:./lib/async-profiler/lib/libasyncProfiler.dylib=start,event=cpu,alloc,file=profile.jfr test/BadPatternsDemo.java
+```
+
+To convert a recording without starting the service, you can download and run the standalone converter:
+
+```sh
+mkdir -p lib
+curl -fsSL -o lib/jfr-converter.jar https://github.com/async-profiler/async-profiler/releases/download/v4.6/jfr-converter.jar
+java -jar lib/jfr-converter.jar --cpu profile.jfr cpu.html
+```
+
+## HTTP API
+
+| Method | Path | Request and result |
+| --- | --- | --- |
+| `POST` | `/api/convertor` | Send one or more `files` parts as `multipart/form-data`. Optional fields: `addFlamegraph=true` and `addDetector=true`. Returns `201` with the UUID as the response body. |
+| `GET` | `/api/convertor/{id}` | Get a generated HTML visualization. See the ID suffixes below. |
+| `GET` | `/api/detector/{uuid}` | Get the HTML detector report for a recording. |
+| `POST` | `/api/heapdump` | Send the heap dump in the multipart `file` field. Returns JOL statistics as plain text. |
+| `POST` | `/api/filesystem/process` | Send JSON with `path` on the **server** filesystem. Optionally set `type` to `jfr` or `heapdump`. For JFR, the response includes the UUID and heatmap links; for a heap dump, it includes the statistics. |
+| `GET` | `/api/history` | List recordings and their statistics. |
+| `GET` | `/api/history-heapdump-stats` | List heap dump analysis results. |
+| `POST` | `/api/history/{uuid}/name` | Rename a recording with a JSON body containing `name`. |
+| `GET` | `/api/storage/stats` | Get RocksDB statistics. |
+| `GET` | `/api/storage/keys` | List RocksDB keys. |
+| `POST` | `/api/clear` | Delete all RocksDB keys, including results and history. |
+
+Use the bare UUID for the default heatmap. Append `-cpu` or `-alloc` for the filtered heatmaps, or `-flame`, `-flame-cpu`, or `-flame-alloc` for flame graphs if generated.
+
+**Deployment:** The app does not authenticate these routes. Restrict access to trusted users: the API can process files on the server and delete stored results. Treat recordings and heap dumps as sensitive data.
+
+## Develop and test
+
+```sh
 clj -M:test
 ```
 
-The suite exercises storage initialization, configuration loading, and helper utilities.
+### Update dependencies
 
----
+```sh
+# Check for updates without changing dependencies.
+clj -M:outdated
 
-## Troubleshooting
+# Apply updates without prompting.
+clj -M:outdated --upgrade --force
+```
 
-- **RocksDB native library errors** – ensure the `librocksdbjni` library is available. Docker builds ship with the dependency; on bare metal install RocksDB or use the precompiled binaries bundled with modern JVMs.
-- **Large uploads fail** – the server is configured to accept files up to 1 GiB. Raise `:max-body` in [`jfr.core/-main`](src/clj/jfr/core.clj) if you need larger recordings.
-- **Heatmap generation slow** – `jfr-merger` runs conversions sequentially. If you process massive profiles consider scaling horizontally or offloading conversion to a worker queue.
+Review the changes to `deps.edn` and rerun the tests after an upgrade.
 
----
+### Start a REPL
 
-## Contributing
+`clj -M:repl` starts nREPL, not the HTTP server. The alias listens on `0.0.0.0:5000` and configures an 8 GiB JVM heap; use it only in a trusted environment. To start and stop HTTP from the REPL:
 
-Issues and pull requests are welcome! If you're planning large changes, open an issue first so we can align on direction.
+```clojure
+(require 'jfr.core)
+(jfr.core/start-server)
+;; When finished:
+(jfr.core/stop-server)
+```
 
-1. Fork and clone the repository.
-2. Create a feature branch.
-3. Add tests or examples when feasible.
-4. Submit a pull request describing your changes.
-
----
+The application code is in [`src/clj/jfr/`](src/clj/jfr/), the browser assets are in [`resources/public/`](resources/public/), and tests are in [`test/`](test/). See [AGENTS.md](AGENTS.md) for code conventions and verification steps.
